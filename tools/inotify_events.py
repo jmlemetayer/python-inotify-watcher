@@ -14,34 +14,34 @@ import tempfile
 from typing import List
 from typing import Tuple
 
-from inotify_simple import Event
-from inotify_simple import flags
-from inotify_simple import INotify
-from inotify_simple import masks
+from inotify_simple import Event as InotifyEvent
+from inotify_simple import flags as InotifyFlags
+from inotify_simple import INotify as Inotify
+from inotify_simple import masks as InotifyMasks
 
 logger = logging.getLogger(__name__)
 
 
 class InotifyEventWrapper:
-    """A class to wrap the inotify_simple.Event.
+    """A class to wrap the InotifyEvent.
 
-    This wrapper is used to pretty print the inotify_simple.Event.
+    This wrapper is used to pretty print the InotifyEvent.
     """
 
-    def __init__(self, event: Event) -> None:
+    def __init__(self, event: InotifyEvent) -> None:
         """Construct the InotifyEventWrapper object.
 
         Parameters
         ----------
-        event: Event
-            The original inotify_simple.Event.
+        event: InotifyEvent
+            The original InotifyEvent.
         """
         self.__event = event
 
     def __str__(self) -> str:
-        """Pretty print the inotify_simple.Event."""
-        event_flags = " ".join([str(f) for f in flags.from_mask(self.__event.mask)])
-        return f"{self.__event} {event_flags}"
+        """Pretty print the InotifyEvent."""
+        flags = " ".join([str(f) for f in InotifyFlags.from_mask(self.__event.mask)])
+        return f"{self.__event} {flags}"
 
 
 class InotifySimpleWatcher:
@@ -65,8 +65,8 @@ class InotifySimpleWatcher:
         path: str
             The path to watch.
         """
-        self.__inotify = INotify()
-        self.__wd = self.__inotify.add_watch(path, masks.ALL_EVENTS)
+        self.__inotify = Inotify()
+        self.__wd = self.__inotify.add_watch(path, InotifyMasks.ALL_EVENTS)
 
     def __del__(self) -> None:
         """Destroy the object."""
