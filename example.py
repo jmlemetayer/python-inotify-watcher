@@ -43,7 +43,7 @@ def main() -> int:
             watcher.wait()
 
         except KeyboardInterrupt:
-            watcher.terminate()
+            watcher.close()
 
     return 0
 

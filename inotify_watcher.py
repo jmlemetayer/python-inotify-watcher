@@ -52,13 +52,13 @@ class InotifyWatcher:
                 - dir_gone(path)
         """
         self.__threads: List[threading.Thread] = list()
-        self.__terminated = threading.Event()
+        self.__closed = threading.Event()
 
         self.__start()
 
     def __del__(self) -> None:
         """Ensure that every resources has been properly closed."""
-        self.terminate()
+        self.close()
 
     def __start(self) -> None:
         self.__threads.append(
@@ -68,17 +68,17 @@ class InotifyWatcher:
             threading.Thread(target=self.__wrapper, args=[self.__runner])
         )
 
-        self.__terminated.clear()
+        self.__closed.clear()
 
         for thread in self.__threads:
             thread.start()
 
-    def terminate(self) -> None:
+    def close(self) -> None:
         """Gracefully exit all threads.
 
         This method can be called multiple times.
         """
-        self.__terminated.set()
+        self.__closed.set()
 
         for thread in self.__threads:
             thread.join()
@@ -86,9 +86,9 @@ class InotifyWatcher:
         self.__threads.clear()
 
     def wait(self, timeout: Optional[float] = None) -> bool:
-        """Block until the watcher has been terminated.
+        """Block until the watcher has been closed.
 
-        Block until the watcher has been terminated, or until the optional
+        Block until the watcher has been closed, or until the optional
         `timeout` occurs.
 
         Parameters
@@ -106,10 +106,10 @@ class InotifyWatcher:
         --------
         threading.Event.wait
         """
-        return self.__terminated.wait(timeout)
+        return self.__closed.wait(timeout)
 
     def __wrapper(self, function: HandlerNoneType) -> None:
-        while not self.__terminated.is_set():
+        while not self.__closed.is_set():
             try:
                 function()
 
