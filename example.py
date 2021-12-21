@@ -4,10 +4,13 @@ This script prints every inotify events received from a temporary
 directory. Once started, use a new terminal to do manually create,
 modify, move or delete files or directories.
 """
+import logging
 import sys
 import tempfile
 
 from inotify_watcher import InotifyWatcher
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 def main() -> int:

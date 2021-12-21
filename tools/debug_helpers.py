@@ -13,7 +13,9 @@ def log_function_name(function):
 
     @functools.wraps(function)
     def log_and_call_function(*args, **kwargs):
-        logger.info(function.__qualname__)
-        return function(*args, **kwargs)
+        logger.debug(f"+++ {function.__qualname__}")
+        value = function(*args, **kwargs)
+        logger.debug(f"--- {function.__qualname__}")
+        return value
 
     return log_and_call_function
