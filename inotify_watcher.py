@@ -4,8 +4,11 @@ This module implements only one `InotifyWatcher` class with a very simple usage.
 """
 import logging
 import threading
+from queue import Queue
 from typing import Callable
+from typing import Dict
 from typing import List
+from typing import NamedTuple
 from typing import Optional
 from typing import Union
 
@@ -19,6 +22,11 @@ HandlerNoneType = Callable[[], None]
 HandlerOneType = Callable[[str], None]
 HandlerTwoType = Callable[[str, str], None]
 HandlerType = Union[HandlerOneType, HandlerTwoType]
+
+
+class Event(NamedTuple):
+    name: str
+    args: List[str]
 
 
 class InotifyWatcher:
@@ -54,11 +62,18 @@ class InotifyWatcher:
         self.__threads: List[threading.Thread] = list()
         self.__closed = threading.Event()
 
+        self.__handlers: Dict[str, HandlerType] = dict()
+        self.__events: Queue[Optional[Event]] = Queue()
+
+        self.__set_handlers(**handlers)
         self.__start()
 
     def __del__(self) -> None:
         """Ensure that every resources has been properly closed."""
         self.close()
+
+    def __set_handlers(self, **handlers: HandlerType) -> None:
+        self.__handlers.update(handlers)
 
     def __start(self) -> None:
         self.__threads.append(
@@ -79,6 +94,7 @@ class InotifyWatcher:
         This method can be called multiple times.
         """
         self.__closed.set()
+        self.__events.put(None)
 
         for thread in self.__threads:
             thread.join()
@@ -120,4 +136,10 @@ class InotifyWatcher:
         pass
 
     def __runner(self) -> None:
-        pass
+        event = self.__events.get()
+
+        if event is None:
+            return
+
+        if event.name in self.__handlers:
+            self.__handlers[event.name](*event.args)
