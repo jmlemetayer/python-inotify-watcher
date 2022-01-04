@@ -12,8 +12,10 @@ import os
 import stat
 import tempfile
 from typing import List
+from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
+from typing import Type
 
 from inotify_simple import Event as InotifyEvent
 from inotify_simple import flags as InotifyFlags
@@ -21,6 +23,152 @@ from inotify_simple import INotify as Inotify
 from inotify_simple import masks as InotifyMasks
 
 logger = logging.getLogger(__name__)
+
+
+class TemporaryPath(NamedTuple):
+    """An abstract class to describe a temporary path."""
+
+    path: str
+    mode: int = 0
+
+
+class TemporaryFile(TemporaryPath):
+    """A class to describe a temporary file."""
+
+    mode: int = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+
+
+class TemporaryDirectory(TemporaryPath):
+    """A class to describe a temporary directory."""
+
+    mode: int = (
+        stat.S_IRUSR
+        | stat.S_IWUSR
+        | stat.S_IXUSR
+        | stat.S_IRGRP
+        | stat.S_IXGRP
+        | stat.S_IROTH
+        | stat.S_IXOTH
+    )
+
+
+TEMPORARY_TEST_FILE = [
+    TemporaryFile("test_file"),
+]
+
+TEMPORARY_ROOT_DIR_TEST_FILE = [
+    TemporaryDirectory("root_dir"),
+    TemporaryFile("root_dir/test_file"),
+]
+
+TEMPORARY_ALT_DIR_TEST_FILE = [
+    TemporaryDirectory("alt_dir"),
+    TemporaryFile("test_file"),
+]
+
+TEMPORARY_ALT_DIR_ROOT_DIR_TEST_FILE = [
+    TemporaryDirectory("alt_dir"),
+    TemporaryDirectory("root_dir"),
+    TemporaryFile("root_dir/test_file"),
+]
+
+TEMPORARY_ALT_DIR_TEST_FILE_ROOT_DIR = [
+    TemporaryDirectory("alt_dir"),
+    TemporaryFile("alt_dir/test_file"),
+    TemporaryDirectory("root_dir"),
+]
+
+TEMPORARY_TEST_DIR = [
+    TemporaryDirectory("test_dir"),
+]
+
+TEMPORARY_ROOT_DIR_TEST_DIR = [
+    TemporaryDirectory("root_dir"),
+    TemporaryDirectory("root_dir/test_dir"),
+]
+
+TEMPORARY_ALT_DIR_TEST_DIR = [
+    TemporaryDirectory("alt_dir"),
+    TemporaryDirectory("test_dir"),
+]
+
+TEMPORARY_ALT_DIR_ROOT_DIR_TEST_DIR = [
+    TemporaryDirectory("alt_dir"),
+    TemporaryDirectory("root_dir"),
+    TemporaryDirectory("root_dir/test_dir"),
+]
+
+TEMPORARY_ALT_DIR_TEST_DIR_ROOT_DIR = [
+    TemporaryDirectory("alt_dir"),
+    TemporaryDirectory("alt_dir/test_dir"),
+    TemporaryDirectory("root_dir"),
+]
+
+
+class TemporaryTree:
+    """A class to create default temporary tree.
+
+    This is for test purpose.
+    """
+
+    def __init__(self, paths: List[Type[TemporaryPath]]) -> None:
+        """Construct the TemporaryTree object.
+
+        A temporary root directory is created and populated with the specified
+        files and directories. The root directory is finally deleted automatically.
+
+        Parameters
+        ----------
+        paths: List[TemporaryPath]
+            The specified files and directories.
+        """
+        self.__temp_dir = tempfile.TemporaryDirectory()
+        self.paths: List[str] = list()
+
+        for path in paths:
+            self.paths.append(self.__add_path(path))
+
+    def __add_path(self, temporary_path: Type[TemporaryPath]) -> str:
+        if isinstance(temporary_path, TemporaryFile):
+            return self.__add_file(temporary_path)
+        elif isinstance(temporary_path, TemporaryDirectory):
+            return self.__add_directory(temporary_path)
+        else:
+            raise Exception("Invalid temporary type")
+
+    def __add_file(self, temporary_file: TemporaryFile) -> str:
+        file = os.path.join(self.__temp_dir.name, temporary_file.path)
+        open(file, "x").close()
+        os.chmod(file, temporary_file.mode)
+        return str(file)
+
+    def __add_directory(self, temporary_directory: TemporaryDirectory) -> str:
+        directory = os.path.join(self.__temp_dir.name, temporary_directory.path)
+        os.mkdir(directory)
+        os.chmod(directory, temporary_directory.mode)
+        return str(directory)
+
+    def __del__(self) -> None:
+        """Destroy the object."""
+        self.cleanup()
+
+    def __enter__(self) -> Tuple[str, ...]:
+        """Enter the runtime context related to this object.
+
+        Returns
+        -------
+        Tuple[str, ...]
+            The temporary files and directories.
+        """
+        return tuple(self.paths)
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Exit the runtime context related to this object."""
+        self.cleanup()
+
+    def cleanup(self) -> None:
+        """Delete the root directory."""
+        self.__temp_dir.cleanup()
 
 
 class InotifyEventWrapper:
@@ -108,99 +256,42 @@ class InotifySimpleWatcher:
         ]
 
 
-class TemporaryFileDirectory:
-    """A class to create default temporary files and directories.
-
-    This is for test purpose.
-    """
-
-    def __init__(self) -> None:
-        """Construct the TemporaryFileDirectory object.
-
-        A root temporary directory is created with a sub-file and a
-        sub-directory. The root directory is deleted automatically.
-        """
-        self.__temp_dir = tempfile.TemporaryDirectory()
-
-        self.temp_file = os.path.join(self.__temp_dir.name, "file")
-        open(self.temp_file, "x").close()
-        os.chmod(
-            self.temp_file, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
-        )
-
-        self.temp_dir = os.path.join(self.__temp_dir.name, "dir")
-        os.mkdir(self.temp_dir)
-        os.chmod(
-            self.temp_dir,
-            stat.S_IRUSR
-            | stat.S_IWUSR
-            | stat.S_IRGRP
-            | stat.S_IROTH
-            | stat.S_IXUSR
-            | stat.S_IXGRP
-            | stat.S_IXOTH,
-        )
-
-    def __del__(self) -> None:
-        """Destroy the object."""
-        self.cleanup()
-
-    def __enter__(self) -> Tuple[str, str, str]:
-        """Enter the runtime context related to this object.
-
-        Returns
-        -------
-        str
-            The temporary root directory.
-        str
-            The temporary file.
-        str
-            The temporary directory.
-        """
-        return (self.__temp_dir.name, self.temp_file, self.temp_dir)
-
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
-        """Exit the runtime context related to this object."""
-        self.cleanup()
-
-    def cleanup(self) -> None:
-        """Delete the root directory."""
-        self.__temp_dir.cleanup()
-
-
 class TestParentFile:
     """A class to test all parent file related use cases."""
 
     def test_self_updated(self):
         """Check for inotify events that occur when self is updated."""
-        with TemporaryFileDirectory() as (_, watched_file, _):
-            with InotifySimpleWatcher(watched_file) as watcher:
-                os.chmod(watched_file, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        with TemporaryTree(TEMPORARY_TEST_FILE) as (test_file,):
+            with InotifySimpleWatcher(test_file) as watcher:
+                os.chmod(test_file, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_self_modified(self):
         """Check for inotify events that occur when self is modified."""
-        with TemporaryFileDirectory() as (_, watched_file, _):
-            with InotifySimpleWatcher(watched_file) as watcher:
-                with open(watched_file, "a") as f:
-                    f.write("This file is watched")
+        with TemporaryTree(TEMPORARY_TEST_FILE) as (test_file,):
+            with InotifySimpleWatcher(test_file) as watcher:
+                with open(test_file, "a") as f:
+                    f.write("This file is test")
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_self_deleted(self):
         """Check for inotify events that occur when self is deleted."""
-        with TemporaryFileDirectory() as (_, watched_file, _):
-            with InotifySimpleWatcher(watched_file) as watcher:
-                os.remove(watched_file)
+        with TemporaryTree(TEMPORARY_TEST_FILE) as (test_file,):
+            with InotifySimpleWatcher(test_file) as watcher:
+                os.remove(test_file)
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_self_moved(self):
         """Check for inotify events that occur when self is moved."""
-        with TemporaryFileDirectory() as (root_dir, watched_file, _):
-            with InotifySimpleWatcher(watched_file) as watcher:
-                os.rename(watched_file, os.path.join(root_dir, "new_file"))
+        with TemporaryTree(TEMPORARY_ALT_DIR_TEST_FILE) as (
+            alt_dir,
+            test_file,
+        ):
+            with InotifySimpleWatcher(test_file) as watcher:
+                os.rename(test_file, os.path.join(alt_dir, "test_file"))
                 for event in watcher.read_events():
                     logger.info(event)
 
@@ -210,25 +301,28 @@ class TestParentDirectory:
 
     def test_self_updated(self):
         """Check for inotify events that occur when self is updated."""
-        with TemporaryFileDirectory() as (_, _, watched_dir):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.chmod(watched_dir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        with TemporaryTree(TEMPORARY_TEST_DIR) as (test_dir,):
+            with InotifySimpleWatcher(test_dir) as watcher:
+                os.chmod(test_dir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_self_deleted(self):
         """Check for inotify events that occur when self is deleted."""
-        with TemporaryFileDirectory() as (_, _, watched_dir):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.rmdir(watched_dir)
+        with TemporaryTree(TEMPORARY_TEST_DIR) as (test_dir,):
+            with InotifySimpleWatcher(test_dir) as watcher:
+                os.rmdir(test_dir)
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_self_moved(self):
         """Check for inotify events that occur when self is moved."""
-        with TemporaryFileDirectory() as (root_dir, _, watched_dir):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.rename(watched_dir, os.path.join(root_dir, "new_dir"))
+        with TemporaryTree(TEMPORARY_ALT_DIR_TEST_DIR) as (
+            alt_dir,
+            test_dir,
+        ):
+            with InotifySimpleWatcher(test_dir) as watcher:
+                os.rename(test_dir, os.path.join(alt_dir, "test_dir"))
                 for event in watcher.read_events():
                     logger.info(event)
 
@@ -238,58 +332,78 @@ class TestChildFile:
 
     def test_file_created(self):
         """Check for inotify events that occur when a file is created."""
-        with TemporaryFileDirectory() as (watched_dir, _, _):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                open(os.path.join(watched_dir, "new_file"), "x").close()
+        with TemporaryTree(TEMPORARY_TEST_DIR) as (root_dir,):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                open(os.path.join(root_dir, "test_file"), "x").close()
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_file_updated(self):
         """Check for inotify events that occur when a file is updated."""
-        with TemporaryFileDirectory() as (watched_dir, child_file, _):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.chmod(child_file, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_FILE) as (
+            root_dir,
+            test_file,
+        ):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                os.chmod(test_file, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_file_modified(self):
         """Check for inotify events that occur when a file is modified."""
-        with TemporaryFileDirectory() as (watched_dir, child_file, _):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                with open(child_file, "a") as f:
-                    f.write("This file is watched")
+        with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_FILE) as (
+            root_dir,
+            test_file,
+        ):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                with open(test_file, "a") as f:
+                    f.write("This file is root")
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_file_moved(self):
         """Check for inotify events that occur when a file is moved."""
-        with TemporaryFileDirectory() as (watched_dir, child_file, _):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.rename(child_file, os.path.join(watched_dir, "new_file"))
+        with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_FILE) as (
+            root_dir,
+            test_file,
+        ):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                os.rename(test_file, os.path.join(root_dir, "test_file"))
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_file_deleted(self):
         """Check for inotify events that occur when a file is deleted."""
-        with TemporaryFileDirectory() as (watched_dir, child_file, _):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.remove(child_file)
+        with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_FILE) as (
+            root_dir,
+            test_file,
+        ):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                os.remove(test_file)
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_file_moved_outside(self):
         """Check for inotify events that occur when a file is moved outside."""
-        with TemporaryFileDirectory() as (watched_dir, child_file, child_dir):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.rename(child_file, os.path.join(child_dir, "new_file"))
+        with TemporaryTree(TEMPORARY_ALT_DIR_ROOT_DIR_TEST_FILE) as (
+            alt_dir,
+            root_dir,
+            test_file,
+        ):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                os.rename(test_file, os.path.join(alt_dir, "test_file"))
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_file_moved_inside(self):
         """Check for inotify events that occur when a file is moved inside."""
-        with TemporaryFileDirectory() as (_, child_file, watched_dir):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.rename(child_file, os.path.join(watched_dir, "new_file"))
+        with TemporaryTree(TEMPORARY_ALT_DIR_TEST_FILE_ROOT_DIR) as (
+            alt_dir,
+            test_file,
+            root_dir,
+        ):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                os.rename(test_file, os.path.join(root_dir, "test_file"))
                 for event in watcher.read_events():
                     logger.info(event)
 
@@ -299,52 +413,65 @@ class TestChildDirectory:
 
     def test_directory_created(self):
         """Check for inotify events that occur when a directory is created."""
-        with TemporaryFileDirectory() as (watched_dir, _, _):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.mkdir(os.path.join(watched_dir, "new_dir"))
+        with TemporaryTree(TEMPORARY_TEST_DIR) as (root_dir,):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                os.mkdir(os.path.join(root_dir, "test_dir"))
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_directory_updated(self):
         """Check for inotify events that occur when a directory is updated."""
-        with TemporaryFileDirectory() as (watched_dir, _, child_dir):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.chmod(child_dir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_DIR) as (
+            root_dir,
+            test_dir,
+        ):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                os.chmod(test_dir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_directory_moved(self):
         """Check for inotify events that occur when a directory is moved."""
-        with TemporaryFileDirectory() as (watched_dir, _, child_dir):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.rename(child_dir, os.path.join(watched_dir, "new_dir"))
+        with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_DIR) as (
+            root_dir,
+            test_dir,
+        ):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                os.rename(test_dir, os.path.join(root_dir, "test_dir"))
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_directory_deleted(self):
         """Check for inotify events that occur when a directory is deleted."""
-        with TemporaryFileDirectory() as (watched_dir, _, child_dir):
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.rmdir(child_dir)
+        with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_DIR) as (
+            root_dir,
+            test_dir,
+        ):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                os.rmdir(test_dir)
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_directory_moved_outside(self):
         """Check for inotify events that occur when a directory is moved outside."""
-        with TemporaryFileDirectory() as (watched_dir, _, child_dir):
-            alt_dir = os.path.join(watched_dir, "alt_dir")
-            os.mkdir(alt_dir)
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.rename(child_dir, os.path.join(alt_dir, "new_dir"))
+        with TemporaryTree(TEMPORARY_ALT_DIR_ROOT_DIR_TEST_DIR) as (
+            alt_dir,
+            root_dir,
+            test_dir,
+        ):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                os.rename(test_dir, os.path.join(alt_dir, "test_dir"))
                 for event in watcher.read_events():
                     logger.info(event)
 
     def test_directory_moved_inside(self):
         """Check for inotify events that occur when a directory is moved inside."""
-        with TemporaryFileDirectory() as (root_dir, _, watched_dir):
-            alt_dir = os.path.join(root_dir, "alt_dir")
-            os.mkdir(alt_dir)
-            with InotifySimpleWatcher(watched_dir) as watcher:
-                os.rename(alt_dir, os.path.join(watched_dir, "new_dir"))
+        with TemporaryTree(TEMPORARY_ALT_DIR_TEST_DIR_ROOT_DIR) as (
+            alt_dir,
+            test_dir,
+            root_dir,
+        ):
+            with InotifySimpleWatcher(root_dir) as watcher:
+                os.rename(test_dir, os.path.join(root_dir, "test_dir"))
                 for event in watcher.read_events():
                     logger.info(event)
