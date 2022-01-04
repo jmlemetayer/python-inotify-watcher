@@ -12,6 +12,7 @@ import os
 import stat
 import tempfile
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 from inotify_simple import Event as InotifyEvent
@@ -57,16 +58,20 @@ class InotifySimpleWatcher:
     >>>         print(event)
     """
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, *paths: str) -> None:
         """Construct the InotifySimpleWatcher object.
 
         Parameters
         ----------
-        path: str
-            The path to watch.
+        *paths: str
+            The paths to watch.
         """
         self.__inotify = Inotify()
-        self.__wd = self.__inotify.add_watch(path, InotifyMasks.ALL_EVENTS)
+        self.__wds: Optional[List[int]] = list()
+        for path in paths:
+            wd = self.__inotify.add_watch(path, InotifyMasks.ALL_EVENTS)
+            self.__wds.append(wd)
+            logger.debug(f"wd={wd} path={path}")
 
     def __del__(self) -> None:
         """Destroy the object."""
@@ -86,12 +91,13 @@ class InotifySimpleWatcher:
         This method can be called multiple times.
         """
         if not self.__inotify.closed:
-            if self.__wd is not None:
+            if self.__wds is not None:
                 try:
-                    self.__inotify.rm_watch(self.__wd)
+                    for wd in self.__wds:
+                        self.__inotify.rm_watch(wd)
                 except OSError:
                     pass
-                self.__wd = None
+                self.__wds = None
             self.__inotify.close()
 
     def read_events(self) -> List[InotifyEventWrapper]:
