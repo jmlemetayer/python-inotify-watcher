@@ -14,7 +14,7 @@ from typing import Union
 
 logger = logging.getLogger(__name__)
 
-__version__ = "0.0.0.dev0"
+__version__ = "0.0.0.dev1"
 
 __all__ = ["InotifyWatcher"]
 
