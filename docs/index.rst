@@ -1,8 +1,11 @@
-Welcome to inotify_watcher's documentation!
-===========================================
+Welcome to inotify_watcher's documentation
+==========================================
+
+This module implements only one :obj:`inotify_watcher.InotifyWatcher` class with
+a very simple usage.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :hidden:
 
-   modules
+   Home <self>
+   API <api>
