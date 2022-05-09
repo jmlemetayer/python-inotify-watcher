@@ -11,11 +11,7 @@ import logging
 import os
 import stat
 import tempfile
-from typing import List
 from typing import NamedTuple
-from typing import Optional
-from typing import Tuple
-from typing import Type
 
 from inotify_simple import Event as InotifyEvent
 from inotify_simple import flags as InotifyFlags
@@ -156,7 +152,7 @@ class TemporaryTree:
     This is for test purpose.
     """
 
-    def __init__(self, paths: List[Type[TemporaryPath]]) -> None:
+    def __init__(self, paths: list[type[TemporaryPath]]) -> None:
         """Construct the TemporaryTree object.
 
         A temporary root directory is created and populated with the specified
@@ -168,12 +164,12 @@ class TemporaryTree:
             The specified files and directories.
         """
         self.__temp_dir = tempfile.TemporaryDirectory()
-        self.paths: List[str] = list()
+        self.paths: list[str] = list()
 
         for path in paths:
             self.paths.append(self.__add_path(path))
 
-    def __add_path(self, temporary_path: Type[TemporaryPath]) -> str:
+    def __add_path(self, temporary_path: type[TemporaryPath]) -> str:
         if isinstance(temporary_path, TemporaryFile):
             return self.__add_file(temporary_path)
         elif isinstance(temporary_path, TemporaryDirectory):
@@ -197,7 +193,7 @@ class TemporaryTree:
         """Destroy the object."""
         self.cleanup()
 
-    def __enter__(self) -> Tuple[str, ...]:
+    def __enter__(self) -> tuple[str, ...]:
         """Enter the runtime context related to this object.
 
         Returns
@@ -260,7 +256,7 @@ class InotifySimpleWatcher:
             The paths to watch.
         """
         self.__inotify = Inotify()
-        self.__wds: Optional[List[int]] = list()
+        self.__wds: list[int] | None = list()
         for path in paths:
             wd = self.__inotify.add_watch(path, InotifyMasks.ALL_EVENTS)
             self.__wds.append(wd)
@@ -293,7 +289,7 @@ class InotifySimpleWatcher:
                 self.__wds = None
             self.__inotify.close()
 
-    def read_events(self) -> List[InotifyEventWrapper]:
+    def read_events(self) -> list[InotifyEventWrapper]:
         """Read the inotify events and wrap them."""
         return [
             InotifyEventWrapper(e)
