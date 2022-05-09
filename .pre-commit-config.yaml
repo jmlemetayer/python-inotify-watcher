@@ -40,6 +40,8 @@ repos:
       - id: mypy
         args:
           - "--python-version=3.8"
+          - "--disallow-untyped-defs"
+          - "--disallow-incomplete-defs"
         additional_dependencies:
           - types-setuptools
   - repo: "https://github.com/PyCQA/flake8"

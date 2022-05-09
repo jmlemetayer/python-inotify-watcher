@@ -11,7 +11,9 @@ import logging
 import os
 import stat
 import tempfile
+from types import TracebackType
 from typing import NamedTuple
+from typing import Sequence
 
 from inotify_simple import Event as InotifyEvent
 from inotify_simple import flags as InotifyFlags
@@ -152,7 +154,7 @@ class TemporaryTree:
     This is for test purpose.
     """
 
-    def __init__(self, paths: list[type[TemporaryPath]]) -> None:
+    def __init__(self, paths: Sequence[TemporaryPath]) -> None:
         """Construct the TemporaryTree object.
 
         A temporary root directory is created and populated with the specified
@@ -160,7 +162,7 @@ class TemporaryTree:
 
         Parameters
         ----------
-        paths: List[TemporaryPath]
+        paths: Sequence[TemporaryPath]
             The specified files and directories.
         """
         self.__temp_dir = tempfile.TemporaryDirectory()
@@ -169,7 +171,7 @@ class TemporaryTree:
         for path in paths:
             self.paths.append(self.__add_path(path))
 
-    def __add_path(self, temporary_path: type[TemporaryPath]) -> str:
+    def __add_path(self, temporary_path: TemporaryPath) -> str:
         if isinstance(temporary_path, TemporaryFile):
             return self.__add_file(temporary_path)
         elif isinstance(temporary_path, TemporaryDirectory):
@@ -203,7 +205,12 @@ class TemporaryTree:
         """
         return tuple(self.paths)
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Exit the runtime context related to this object."""
         self.cleanup()
 
@@ -270,7 +277,12 @@ class InotifySimpleWatcher:
         """Enter the runtime context related to this object."""
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Exit the runtime context related to this object."""
         self.close()
 
@@ -300,7 +312,7 @@ class InotifySimpleWatcher:
 class TestParentFile:
     """A class to test all parent file related use cases."""
 
-    def test_self_updated(self):
+    def test_self_updated(self) -> None:
         """Check for inotify events that occur when self is updated."""
         with TemporaryTree(TEMPORARY_TEST_FILE) as (test_file,):
             with InotifySimpleWatcher(test_file) as watcher:
@@ -308,7 +320,7 @@ class TestParentFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_self_modified(self):
+    def test_self_modified(self) -> None:
         """Check for inotify events that occur when self is modified."""
         with TemporaryTree(TEMPORARY_TEST_FILE) as (test_file,):
             with InotifySimpleWatcher(test_file) as watcher:
@@ -317,7 +329,7 @@ class TestParentFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_self_deleted(self):
+    def test_self_deleted(self) -> None:
         """Check for inotify events that occur when self is deleted."""
         with TemporaryTree(TEMPORARY_TEST_FILE) as (test_file,):
             with InotifySimpleWatcher(test_file) as watcher:
@@ -325,7 +337,7 @@ class TestParentFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_self_moved(self):
+    def test_self_moved(self) -> None:
         """Check for inotify events that occur when self is moved."""
         with TemporaryTree(TEMPORARY_ALT_DIR_TEST_FILE) as (
             alt_dir,
@@ -340,7 +352,7 @@ class TestParentFile:
 class TestParentDirectory:
     """A class to test all parent directory related use cases."""
 
-    def test_self_updated(self):
+    def test_self_updated(self) -> None:
         """Check for inotify events that occur when self is updated."""
         with TemporaryTree(TEMPORARY_TEST_DIR) as (test_dir,):
             with InotifySimpleWatcher(test_dir) as watcher:
@@ -348,7 +360,7 @@ class TestParentDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_self_deleted(self):
+    def test_self_deleted(self) -> None:
         """Check for inotify events that occur when self is deleted."""
         with TemporaryTree(TEMPORARY_TEST_DIR) as (test_dir,):
             with InotifySimpleWatcher(test_dir) as watcher:
@@ -356,7 +368,7 @@ class TestParentDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_self_moved(self):
+    def test_self_moved(self) -> None:
         """Check for inotify events that occur when self is moved."""
         with TemporaryTree(TEMPORARY_ALT_DIR_TEST_DIR) as (
             alt_dir,
@@ -371,7 +383,7 @@ class TestParentDirectory:
 class TestChildFile:
     """A class to test all child file related use cases."""
 
-    def test_file_created(self):
+    def test_file_created(self) -> None:
         """Check for inotify events that occur when a file is created."""
         with TemporaryTree(TEMPORARY_TEST_DIR) as (root_dir,):
             with InotifySimpleWatcher(root_dir) as watcher:
@@ -379,7 +391,7 @@ class TestChildFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_file_updated(self):
+    def test_file_updated(self) -> None:
         """Check for inotify events that occur when a file is updated."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_FILE) as (
             root_dir,
@@ -390,7 +402,7 @@ class TestChildFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_file_modified(self):
+    def test_file_modified(self) -> None:
         """Check for inotify events that occur when a file is modified."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_FILE) as (
             root_dir,
@@ -402,7 +414,7 @@ class TestChildFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_file_moved(self):
+    def test_file_moved(self) -> None:
         """Check for inotify events that occur when a file is moved."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_FILE) as (
             root_dir,
@@ -413,7 +425,7 @@ class TestChildFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_file_deleted(self):
+    def test_file_deleted(self) -> None:
         """Check for inotify events that occur when a file is deleted."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_FILE) as (
             root_dir,
@@ -424,7 +436,7 @@ class TestChildFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_file_moved_outside(self):
+    def test_file_moved_outside(self) -> None:
         """Check for inotify events that occur when a file is moved outside."""
         with TemporaryTree(TEMPORARY_ALT_DIR_ROOT_DIR_TEST_FILE) as (
             alt_dir,
@@ -436,7 +448,7 @@ class TestChildFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_file_moved_inside(self):
+    def test_file_moved_inside(self) -> None:
         """Check for inotify events that occur when a file is moved inside."""
         with TemporaryTree(TEMPORARY_ALT_DIR_TEST_FILE_ROOT_DIR) as (
             alt_dir,
@@ -452,7 +464,7 @@ class TestChildFile:
 class TestChildDirectory:
     """A class to test all child directory related use cases."""
 
-    def test_directory_created(self):
+    def test_directory_created(self) -> None:
         """Check for inotify events that occur when a directory is created."""
         with TemporaryTree(TEMPORARY_TEST_DIR) as (root_dir,):
             with InotifySimpleWatcher(root_dir) as watcher:
@@ -460,7 +472,7 @@ class TestChildDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_directory_updated(self):
+    def test_directory_updated(self) -> None:
         """Check for inotify events that occur when a directory is updated."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_DIR) as (
             root_dir,
@@ -471,7 +483,7 @@ class TestChildDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_directory_moved(self):
+    def test_directory_moved(self) -> None:
         """Check for inotify events that occur when a directory is moved."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_DIR) as (
             root_dir,
@@ -482,7 +494,7 @@ class TestChildDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_directory_deleted(self):
+    def test_directory_deleted(self) -> None:
         """Check for inotify events that occur when a directory is deleted."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_TEST_DIR) as (
             root_dir,
@@ -493,7 +505,7 @@ class TestChildDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_directory_moved_outside(self):
+    def test_directory_moved_outside(self) -> None:
         """Check for inotify events that occur when a directory is moved outside."""
         with TemporaryTree(TEMPORARY_ALT_DIR_ROOT_DIR_TEST_DIR) as (
             alt_dir,
@@ -505,7 +517,7 @@ class TestChildDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_directory_moved_inside(self):
+    def test_directory_moved_inside(self) -> None:
         """Check for inotify events that occur when a directory is moved inside."""
         with TemporaryTree(TEMPORARY_ALT_DIR_TEST_DIR_ROOT_DIR) as (
             alt_dir,
@@ -521,7 +533,7 @@ class TestChildDirectory:
 class TestTreeFile:
     """A class to test all tree file related use cases."""
 
-    def test_tree_file_created(self):
+    def test_tree_file_created(self) -> None:
         """Check for inotify events that occur when a file is created."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_SUB_DIR) as (
             root_dir,
@@ -532,7 +544,7 @@ class TestTreeFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_tree_file_updated(self):
+    def test_tree_file_updated(self) -> None:
         """Check for inotify events that occur when a file is updated."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_SUB_DIR_TEST_FILE) as (
             root_dir,
@@ -544,7 +556,7 @@ class TestTreeFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_tree_file_modified(self):
+    def test_tree_file_modified(self) -> None:
         """Check for inotify events that occur when a file is modified."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_SUB_DIR_TEST_FILE) as (
             root_dir,
@@ -557,7 +569,7 @@ class TestTreeFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_tree_file_moved(self):
+    def test_tree_file_moved(self) -> None:
         """Check for inotify events that occur when a file is moved."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_SUB_DIR_TEST_FILE) as (
             root_dir,
@@ -569,7 +581,7 @@ class TestTreeFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_tree_file_deleted(self):
+    def test_tree_file_deleted(self) -> None:
         """Check for inotify events that occur when a file is deleted."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_SUB_DIR_TEST_FILE) as (
             root_dir,
@@ -581,7 +593,7 @@ class TestTreeFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_tree_file_moved_outside(self):
+    def test_tree_file_moved_outside(self) -> None:
         """Check for inotify events that occur when a file is moved outside."""
         with TemporaryTree(TEMPORARY_ALT_DIR_ROOT_DIR_SUB_DIR_TEST_FILE) as (
             alt_dir,
@@ -594,7 +606,7 @@ class TestTreeFile:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_tree_file_moved_inside(self):
+    def test_tree_file_moved_inside(self) -> None:
         """Check for inotify events that occur when a file is moved inside."""
         with TemporaryTree(TEMPORARY_ALT_DIR_TEST_FILE_ROOT_DIR_SUB_DIR) as (
             alt_dir,
@@ -611,7 +623,7 @@ class TestTreeFile:
 class TestTreeDirectory:
     """A class to test all tree directory related use cases."""
 
-    def test_tree_directory_created(self):
+    def test_tree_directory_created(self) -> None:
         """Check for inotify events that occur when a directory is created."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_SUB_DIR) as (
             root_dir,
@@ -622,7 +634,7 @@ class TestTreeDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_tree_directory_updated(self):
+    def test_tree_directory_updated(self) -> None:
         """Check for inotify events that occur when a directory is updated."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_SUB_DIR_TEST_DIR) as (
             root_dir,
@@ -634,7 +646,7 @@ class TestTreeDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_tree_directory_moved(self):
+    def test_tree_directory_moved(self) -> None:
         """Check for inotify events that occur when a directory is moved."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_SUB_DIR_TEST_DIR) as (
             root_dir,
@@ -646,7 +658,7 @@ class TestTreeDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_tree_directory_deleted(self):
+    def test_tree_directory_deleted(self) -> None:
         """Check for inotify events that occur when a directory is deleted."""
         with TemporaryTree(TEMPORARY_ROOT_DIR_SUB_DIR_TEST_DIR) as (
             root_dir,
@@ -658,7 +670,7 @@ class TestTreeDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_tree_directory_moved_outside(self):
+    def test_tree_directory_moved_outside(self) -> None:
         """Check for inotify events that occur when a directory is moved outside."""
         with TemporaryTree(TEMPORARY_ALT_DIR_ROOT_DIR_SUB_DIR_TEST_DIR) as (
             alt_dir,
@@ -671,7 +683,7 @@ class TestTreeDirectory:
                 for event in watcher.read_events():
                     logger.info(event)
 
-    def test_tree_directory_moved_inside(self):
+    def test_tree_directory_moved_inside(self) -> None:
         """Check for inotify events that occur when a directory is moved inside."""
         with TemporaryTree(TEMPORARY_ALT_DIR_TEST_DIR_ROOT_DIR_SUB_DIR) as (
             alt_dir,
