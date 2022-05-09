@@ -2,6 +2,10 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[[tool.mypy.overrides]]
+module = "inotify_simple"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 log_cli = true
 log_cli_level = "INFO"
