@@ -7,6 +7,8 @@ Notes
 .. _Sphinx configuration:
    https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
+from __future__ import annotations
+
 import os
 import sys
 
