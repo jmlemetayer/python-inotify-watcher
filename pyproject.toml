@@ -3,9 +3,10 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [[tool.mypy.overrides]]
-module = "inotify_simple"
+module = ["inotify_simple", "pytest"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 log_cli = true
 log_cli_level = "INFO"
+log_cli_format = "%(levelname)8s %(message)s"
