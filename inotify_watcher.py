@@ -2,14 +2,13 @@
 
 This module implements only one `InotifyWatcher` class with a very simple usage.
 """
+from __future__ import annotations
+
 import logging
 import threading
 from queue import Queue
 from typing import Callable
-from typing import Dict
-from typing import List
 from typing import NamedTuple
-from typing import Optional
 from typing import Union
 
 logger = logging.getLogger(__name__)
@@ -26,7 +25,7 @@ HandlerType = Union[HandlerOneType, HandlerTwoType]
 
 class Event(NamedTuple):
     name: str
-    args: List[str]
+    args: list[str]
 
 
 class InotifyWatcher:
@@ -59,11 +58,11 @@ class InotifyWatcher:
                 - dir_deleted(path)
                 - dir_gone(path)
         """
-        self.__threads: List[threading.Thread] = list()
+        self.__threads: list[threading.Thread] = list()
         self.__closed = threading.Event()
 
-        self.__handlers: Dict[str, HandlerType] = dict()
-        self.__events: Queue[Optional[Event]] = Queue()
+        self.__handlers: dict[str, HandlerType] = dict()
+        self.__events: Queue[Event | None] = Queue()
 
         self.__set_handlers(**handlers)
         self.__start()
@@ -101,7 +100,7 @@ class InotifyWatcher:
 
         self.__threads.clear()
 
-    def wait(self, timeout: Optional[float] = None) -> bool:
+    def wait(self, timeout: float | None = None) -> bool:
         """Block until the watcher has been closed.
 
         Block until the watcher has been closed, or until the optional

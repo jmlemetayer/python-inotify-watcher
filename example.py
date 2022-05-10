@@ -4,6 +4,8 @@ This script prints every inotify events received from a temporary
 directory. Once started, use a new terminal to do manually create,
 modify, move or delete files or directories.
 """
+from __future__ import annotations
+
 import logging
 import sys
 import tempfile
