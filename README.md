@@ -18,11 +18,11 @@ This module implements only one `InotifyWatcher` class with a very simple usage.
 
 [package-badge]: https://img.shields.io/pypi/v/inotify-watcher
 [package-link]: https://pypi.org/project/inotify-watcher
-[documentation-badge]: https://img.shields.io/readthedocs/inotify-watcher
-[documentation-link]: https://inotify-watcher.readthedocs.io/en/latest
-[license-badge]: https://img.shields.io/github/license/jmlemetayer/inotify_watcher
-[license-link]: https://github.com/jmlemetayer/inotify_watcher/blob/main/LICENSE.md
-[build-badge]: https://img.shields.io/github/workflow/status/jmlemetayer/inotify_watcher/inotify_watcher/main
-[build-link]: https://github.com/jmlemetayer/inotify_watcher/actions
-[pre-commit-badge]: https://results.pre-commit.ci/badge/github/jmlemetayer/inotify_watcher/main.svg
-[pre-commit-link]: https://results.pre-commit.ci/latest/github/jmlemetayer/inotify_watcher/main
+[documentation-badge]: https://img.shields.io/readthedocs/python-inotify-watcher
+[documentation-link]: https://python-inotify-watcher.readthedocs.io/en/latest
+[license-badge]: https://img.shields.io/github/license/jmlemetayer/python-inotify-watcher
+[license-link]: https://github.com/jmlemetayer/python-inotify-watcher/blob/main/LICENSE.md
+[build-badge]: https://img.shields.io/github/workflow/status/jmlemetayer/python-inotify-watcher/python-inotify-watcher/main
+[build-link]: https://github.com/jmlemetayer/python-inotify-watcher/actions
+[pre-commit-badge]: https://results.pre-commit.ci/badge/github/jmlemetayer/python-inotify-watcher/main.svg
+[pre-commit-link]: https://results.pre-commit.ci/latest/github/jmlemetayer/python-inotify-watcher/main
