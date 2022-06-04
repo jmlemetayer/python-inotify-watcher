@@ -14,8 +14,25 @@ Welcome to inotify_watcher's documentation
 
 *An easy way to use inotify*
 
-This module implements only one :obj:`inotify_watcher.InotifyWatcher` class with
-a very simple usage.
+Installation
+------------
+
+Using ``pip``::
+
+    pip install inotify_watcher
+
+Usage
+-----
+
+The `inotify_watcher` module implements only one
+:obj:`inotify_watcher.InotifyWatcher` class with a very simple usage.
+
+License
+-------
+
+The `inotify_watcher` module is released under the `MIT License`_
+
+.. _`MIT License`: https://github.com/jmlemetayer/python-inotify-watcher/blob/main/LICENSE.md
 
 .. toctree::
    :hidden:

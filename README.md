@@ -8,13 +8,22 @@
 
 *An easy way to use inotify*
 
-This module implements only one `InotifyWatcher` class with a very simple usage.
+## Installation
 
-## Features
-- inotify event manager and cookie tracking
-- callback oriented design
-- non blocking design (using threading.Thread)
-- recursive directory watching
+Using `pip`:
+```bash
+pip install inotify_watcher
+```
+
+## Further Reading
+
+The documentation of the `inotify_watcher` module can be found here:
+
+> https://python-inotify-watcher.readthedocs.io
+
+## License
+
+The `inotify_watcher` module is released under the [MIT License][license-link].
 
 [package-badge]: https://img.shields.io/pypi/v/inotify-watcher
 [package-link]: https://pypi.org/project/inotify-watcher
