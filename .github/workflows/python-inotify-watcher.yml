@@ -1,4 +1,4 @@
-name: inotify_watcher
+name: python-inotify-watcher
 
 on:
   push:
