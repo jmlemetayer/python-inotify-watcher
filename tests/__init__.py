@@ -1,4 +1,10 @@
-"""Test plan for the `inotify_watcher` module."""
+"""Test package for the `inotify_watcher` package.
+
+Please check the `Good Integration Practices`_.
+
+.. _Good Integration Practices:
+   https://docs.pytest.org/en/latest/explanation/goodpractices.html
+"""
 from __future__ import annotations
 
 import logging

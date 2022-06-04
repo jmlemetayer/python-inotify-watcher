@@ -55,8 +55,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install pytest
         pip install inotify_simple
+        pip install pytest
 
     - name: Run pytest
       run: pytest tests
