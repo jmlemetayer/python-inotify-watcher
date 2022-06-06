@@ -31,6 +31,24 @@ class Event(NamedTuple):
     args: list[str]
 
 
+class WatchManager:
+    def __init__(self, event_queue: Queue[Event | None]) -> None:
+        self.__event_queue = event_queue
+
+    def add_paths(self, *paths: PathType) -> None:
+        for path in paths:
+            self.add_path(path)
+
+    def add_path(self, path: PathType) -> None:
+        pass  # TODO Add the path to the inotify watch.
+
+    def close(self) -> None:
+        pass  # TODO Gracefully exit the watch.
+
+    def watch(self) -> None:
+        pass  # TODO Continuously watch the inotify events.
+
+
 class InotifyWatcher:
     """A class to watch inotify events.
 
@@ -69,6 +87,9 @@ class InotifyWatcher:
 
         self.__event_queue: Queue[Event | None] = Queue()
 
+        self.__watch_manager = WatchManager(self.__event_queue)
+        self.__watch_manager.add_paths(*paths)
+
         self.__start()
 
     def __del__(self) -> None:
@@ -95,6 +116,7 @@ class InotifyWatcher:
         """
         self.__closed.set()
         self.__event_queue.put(None)
+        self.__watch_manager.close()
 
         for thread in self.__threads:
             thread.join()
@@ -133,7 +155,7 @@ class InotifyWatcher:
                 logger.error(err, exc_info=True)
 
     def __watcher(self) -> None:
-        pass
+        self.__watch_manager.watch()
 
     def __runner(self) -> None:
         event = self.__event_queue.get()
