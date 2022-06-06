@@ -62,17 +62,15 @@ class InotifyWatcher:
         self.__closed = threading.Event()
 
         self.__handlers: dict[str, HandlerType] = dict()
+        self.__handlers.update(handlers)
+
         self.__event_queue: Queue[Event | None] = Queue()
 
-        self.__set_handlers(**handlers)
         self.__start()
 
     def __del__(self) -> None:
         """Ensure that every resources has been properly closed."""
         self.close()
-
-    def __set_handlers(self, **handlers: HandlerType) -> None:
-        self.__handlers.update(handlers)
 
     def __start(self) -> None:
         self.__threads.append(
