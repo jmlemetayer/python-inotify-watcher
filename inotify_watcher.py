@@ -62,7 +62,7 @@ class InotifyWatcher:
         self.__closed = threading.Event()
 
         self.__handlers: dict[str, HandlerType] = dict()
-        self.__events: Queue[Event | None] = Queue()
+        self.__event_queue: Queue[Event | None] = Queue()
 
         self.__set_handlers(**handlers)
         self.__start()
@@ -93,7 +93,7 @@ class InotifyWatcher:
         This method can be called multiple times.
         """
         self.__closed.set()
-        self.__events.put(None)
+        self.__event_queue.put(None)
 
         for thread in self.__threads:
             thread.join()
@@ -135,7 +135,7 @@ class InotifyWatcher:
         pass
 
     def __runner(self) -> None:
-        event = self.__events.get()
+        event = self.__event_queue.get()
 
         if event is None:
             return
