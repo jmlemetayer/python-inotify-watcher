@@ -5,6 +5,7 @@ This module implements only one `InotifyWatcher` class with a very simple usage.
 from __future__ import annotations
 
 import logging
+import pathlib
 import threading
 from queue import Queue
 from typing import Callable
@@ -22,6 +23,8 @@ HandlerOneType = Callable[[str], None]
 HandlerTwoType = Callable[[str, str], None]
 HandlerType = Union[HandlerOneType, HandlerTwoType]
 
+PathType = Union[pathlib.Path, str]
+
 
 class Event(NamedTuple):
     name: str
@@ -35,12 +38,12 @@ class InotifyWatcher:
     simultaneously. The design is callback oriented and non-blocking.
     """
 
-    def __init__(self, *paths: str, **handlers: HandlerType) -> None:
+    def __init__(self, *paths: PathType, **handlers: HandlerType) -> None:
         """Construct the InotifyWatcher object.
 
         Parameters
         ----------
-        *paths: str
+        *paths: pathlib.Path or str
             Files and / or directories to watch.
         **handlers: HandlerType
             The supported handlers are:
