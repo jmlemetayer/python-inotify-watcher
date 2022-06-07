@@ -5,12 +5,16 @@ This module implements only one `InotifyWatcher` class with a very simple usage.
 from __future__ import annotations
 
 import logging
+import os
 import pathlib
+import select
 import threading
 from queue import Queue
 from typing import Callable
 from typing import NamedTuple
 from typing import Union
+
+import inotify_simple
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +38,9 @@ class Event(NamedTuple):
 class WatchManager:
     def __init__(self, event_queue: Queue[Event | None]) -> None:
         self.__event_queue = event_queue
+        self.__inotify = inotify_simple.INotify()
+        self.__read_fd, write_fd = os.pipe()
+        self.__write = os.fdopen(write_fd, "wb")
 
     def add_paths(self, *paths: PathType) -> None:
         for path in paths:
@@ -43,10 +50,23 @@ class WatchManager:
         pass  # TODO Add the path to the inotify watch.
 
     def close(self) -> None:
-        pass  # TODO Gracefully exit the watch.
+        if not self.__write.closed:
+            self.__write.write(b"\x00")
+            self.__write.close()
 
     def watch(self) -> None:
-        pass  # TODO Continuously watch the inotify events.
+        rlist, _, _ = select.select([self.__inotify.fileno(), self.__read_fd], [], [])
+
+        if self.__inotify.fileno() in rlist:
+            for event in self.__inotify.read(timeout=0):
+                self.__handle_event(event)
+
+        if self.__read_fd in rlist:
+            os.close(self.__read_fd)
+            self.__inotify.close()
+
+    def __handle_event(self, event: inotify_simple.Event) -> None:
+        pass  # TODO Handle the event.
 
 
 class InotifyWatcher:
