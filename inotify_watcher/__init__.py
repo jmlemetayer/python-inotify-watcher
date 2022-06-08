@@ -22,17 +22,18 @@ __version__ = "0.0.0.dev1"
 
 __all__ = ["InotifyWatcher"]
 
-HandlerNoneType = Callable[[], None]
-HandlerOneType = Callable[[str], None]
-HandlerTwoType = Callable[[str, str], None]
-HandlerType = Union[HandlerOneType, HandlerTwoType]
+PathType = pathlib.Path
+UserPathType = Union[pathlib.Path, str]
 
-PathType = Union[pathlib.Path, str]
+HandlerNoneType = Callable[[], None]
+HandlerOneType = Callable[[PathType], None]
+HandlerTwoType = Callable[[PathType, PathType], None]
+HandlerType = Union[HandlerOneType, HandlerTwoType]
 
 
 class Event(NamedTuple):
     name: str
-    args: list[str]
+    args: list[PathType]
 
 
 class WatchManager:
@@ -42,11 +43,11 @@ class WatchManager:
         self.__read_fd, write_fd = os.pipe()
         self.__write = os.fdopen(write_fd, "wb")
 
-    def add_paths(self, *paths: PathType) -> None:
+    def add_paths(self, *paths: UserPathType) -> None:
         for path in paths:
             self.add_path(path)
 
-    def add_path(self, path: PathType) -> None:
+    def add_path(self, path: UserPathType) -> None:
         pass  # TODO Add the path to the inotify watch.
 
     def close(self) -> None:
@@ -76,7 +77,7 @@ class InotifyWatcher:
     simultaneously. The design is callback oriented and non-blocking.
     """
 
-    def __init__(self, *paths: PathType, **handlers: HandlerType) -> None:
+    def __init__(self, *paths: UserPathType, **handlers: HandlerType) -> None:
         """Construct the InotifyWatcher object.
 
         Parameters
