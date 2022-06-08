@@ -61,3 +61,4 @@ repos:
           - "--source"
         additional_dependencies:
           - toml
+        exclude: example.py

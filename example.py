@@ -1,52 +1,87 @@
-"""Example script to show the basic `InotifyWatcher` usage.
-
-This script prints every inotify events received from a temporary
-directory. Once started, use a new terminal to do manually create,
-modify, move or delete files or directories.
-"""
 from __future__ import annotations
 
 import logging
+import pathlib
+import signal
 import sys
-import tempfile
+import threading
+import types
 
 from inotify_watcher import InotifyWatcher
 
 logging.basicConfig(level=logging.DEBUG)
 
 
+class ExampleThread(threading.Thread):
+    def __init__(self) -> None:
+        threading.Thread.__init__(self)
+
+        self.__cwd = pathlib.Path.cwd()
+        self.__watcher = InotifyWatcher(
+            self.__cwd,
+            file_watched=lambda p: print(f"File {p.relative_to(self.__cwd)} watched"),
+            file_created=lambda p: print(f"File {p.relative_to(self.__cwd)} created"),
+            file_updated=lambda p: print(f"File {p.relative_to(self.__cwd)} updated"),
+            file_modified=self.__file_modified,
+            file_moved=self.__file_moved,
+            file_deleted=self.__file_deleted,
+            file_gone=self.__file_gone,
+            dir_watched=lambda p: print(
+                f"Directory {p.relative_to(self.__cwd)} watched"
+            ),
+            dir_created=lambda p: print(
+                f"Directory {p.relative_to(self.__cwd)} created"
+            ),
+            dir_updated=lambda p: print(
+                f"Directory {p.relative_to(self.__cwd)} updated"
+            ),
+            dir_moved=self.__dir_moved,
+            dir_deleted=self.__dir_deleted,
+            dir_gone=self.__dir_gone,
+        )
+
+    def run(self) -> None:
+        print(f"Inotify watcher is running on {self.__cwd}")
+        self.__watcher.wait()
+
+    def stop(self) -> None:
+        self.__watcher.close()
+
+    def __file_modified(self, p: pathlib.Path) -> None:
+        print(f"File {p.relative_to(self.__cwd)} modified")
+
+    def __file_moved(self, p: pathlib.Path, n: pathlib.Path) -> None:
+        print(f"File {p.relative_to(self.__cwd)} moved to {n.relative_to(self.__cwd)}")
+
+    def __file_deleted(self, p: pathlib.Path) -> None:
+        print(f"File {p.relative_to(self.__cwd)} deleted")
+
+    def __file_gone(self, p: pathlib.Path) -> None:
+        print(f"File {p.relative_to(self.__cwd)} gone")
+
+    def __dir_moved(self, p: pathlib.Path, n: pathlib.Path) -> None:
+        print(
+            f"Directory {p.relative_to(self.__cwd)} "
+            f"moved to {n.relative_to(self.__cwd)}"
+        )
+
+    def __dir_deleted(self, p: pathlib.Path) -> None:
+        print(f"Directory {p.relative_to(self.__cwd)} deleted")
+
+    def __dir_gone(self, p: pathlib.Path) -> None:
+        print(f"Directory {p.relative_to(self.__cwd)} gone")
+
+
 def main() -> int:
-    """Show the basic usage of the `InotifyWatcher` class.
+    t = ExampleThread()
 
-    This function creates a temporary directory and then print every
-    inotify events received.
-    """
-    with tempfile.TemporaryDirectory() as watched_dir:
-        try:
-            watcher = InotifyWatcher(
-                watched_dir,
-                file_watched=lambda p: print(f"file {p} watched"),
-                file_created=lambda p: print(f"file {p} created"),
-                file_updated=lambda p: print(f"file {p} updated"),
-                file_modified=lambda p: print(f"file {p} modified"),
-                file_moved=lambda p, n: print(f"file {p} moved to {n}"),
-                file_deleted=lambda p: print(f"file {p} deleted"),
-                file_gone=lambda p: print(f"file {p} gone"),
-                dir_watched=lambda p: print(f"directory {p} watched"),
-                dir_created=lambda p: print(f"directory {p} created"),
-                dir_updated=lambda p: print(f"directory {p} updated"),
-                dir_moved=lambda p, n: print(f"directory {p} moved to {n}"),
-                dir_deleted=lambda p: print(f"directory {p} deleted"),
-                dir_gone=lambda p: print(f"directory {p} gone"),
-            )
+    def sigint_handler(signum: int, frame: types.FrameType | None) -> None:
+        t.stop()
 
-            print(f"watched directory: {watched_dir}")
+    signal.signal(signal.SIGINT, sigint_handler)
 
-            watcher.wait()
-
-        except KeyboardInterrupt:
-            watcher.close()
-
+    t.start()
+    t.join()
     return 0
 
 
