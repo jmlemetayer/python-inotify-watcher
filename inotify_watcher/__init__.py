@@ -36,19 +36,43 @@ class Event(NamedTuple):
     args: list[PathType]
 
 
+class WatchedPath:
+    def __init__(self, path: PathType, descriptor: int) -> None:
+        self.path = path
+        self.descriptor = descriptor
+
+
 class WatchManager:
     def __init__(self, event_queue: Queue[Event | None]) -> None:
         self.__event_queue = event_queue
+
         self.__inotify = inotify_simple.INotify()
         self.__read_fd, write_fd = os.pipe()
         self.__write = os.fdopen(write_fd, "wb")
+
+        self.__watched_paths: list[WatchedPath] = list()
 
     def add_paths(self, *paths: UserPathType) -> None:
         for path in paths:
             self.add_path(path)
 
     def add_path(self, path: UserPathType) -> None:
-        pass  # TODO Add the path to the inotify watch.
+        path = PathType(path)
+
+        self.__add_path(path)
+
+        if path.is_dir():
+            for rootpath, dirnames, filenames in os.walk(path):
+                root = PathType(rootpath)
+                for dirname in dirnames:
+                    self.__add_path(root / dirname)
+                for filename in filenames:
+                    self.__add_path(root / filename)
+
+    def __add_path(self, path: PathType) -> None:
+        descriptor = self.__inotify.add_watch(path, inotify_simple.masks.ALL_EVENTS)
+        watched_path = WatchedPath(path, descriptor)
+        self.__watched_paths.append(watched_path)
 
     def close(self) -> None:
         if not self.__write.closed:
@@ -64,6 +88,9 @@ class WatchManager:
 
         if self.__read_fd in rlist:
             os.close(self.__read_fd)
+            for path in self.__watched_paths:
+                self.__inotify.rm_watch(path.descriptor)
+            self.__watched_paths.clear()
             self.__inotify.close()
 
     def __handle_event(self, event: inotify_simple.Event) -> None:
