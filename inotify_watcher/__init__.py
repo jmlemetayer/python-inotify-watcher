@@ -37,9 +37,27 @@ class Event(NamedTuple):
 
 
 class WatchedPath:
-    def __init__(self, path: PathType, descriptor: int) -> None:
-        self.path = path
+    def __init__(
+        self, path: PathType, descriptor: int, parent: WatchedPath | None = None
+    ) -> None:
+        self.__path = path
         self.descriptor = descriptor
+        self.__parent = parent
+        self.__childs: list[WatchedPath] = list()
+
+        if parent is not None:
+            self.__path = path.relative_to(parent.path)
+
+    @property
+    def path(self) -> PathType:
+        if self.__parent is not None:
+            return self.__parent.path / self.__path
+        return self.__path
+
+    def add_path(self, path: PathType, descriptor: int) -> WatchedPath:
+        watched_path = WatchedPath(path, descriptor, parent=self)
+        self.__childs.append(watched_path)
+        return watched_path
 
 
 class WatchManager:
@@ -71,8 +89,25 @@ class WatchManager:
 
     def __add_path(self, path: PathType) -> None:
         descriptor = self.__inotify.add_watch(path, inotify_simple.masks.ALL_EVENTS)
-        watched_path = WatchedPath(path, descriptor)
+        parent = self.get_path(path.parent)
+
+        if parent is not None:
+            watched_path = parent.add_path(path, descriptor)
+        else:
+            watched_path = WatchedPath(path, descriptor)
+
         self.__watched_paths.append(watched_path)
+
+    def get_path(self, path_or_descriptor: PathType | int) -> WatchedPath | None:
+        if isinstance(path_or_descriptor, PathType):
+            for watched_path in self.__watched_paths:
+                if watched_path.path == path_or_descriptor:
+                    return watched_path
+        elif isinstance(path_or_descriptor, int):
+            for watched_path in self.__watched_paths:
+                if watched_path.descriptor == path_or_descriptor:
+                    return watched_path
+        return None
 
     def close(self) -> None:
         if not self.__write.closed:
