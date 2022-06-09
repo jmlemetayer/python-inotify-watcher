@@ -38,15 +38,35 @@ class Event(NamedTuple):
 
 class WatchedPath:
     def __init__(
-        self, path: PathType, descriptor: int, parent: WatchedPath | None = None
+        self,
+        path: PathType,
+        descriptor: int,
+        event_queue: Queue[Event | None],
+        parent: WatchedPath | None = None,
+        initial: bool | None = None,
     ) -> None:
         self.__path = path
+        self.__is_dir = path.is_dir()
         self.descriptor = descriptor
         self.__parent = parent
+        self.__event_queue = event_queue
         self.__childs: list[WatchedPath] = list()
 
         if parent is not None:
             self.__path = path.relative_to(parent.path)
+
+        if initial:
+            self.__send_event("watched", self.path)
+        else:
+            self.__send_event("created", self.path)
+
+    def __send_event(self, event_name: str, *paths: PathType) -> None:
+        if self.__is_dir:
+            event_name = f"dir_{event_name}"
+        else:
+            event_name = f"file_{event_name}"
+
+        self.__event_queue.put(Event(event_name, list(paths)))
 
     @property
     def path(self) -> PathType:
@@ -54,8 +74,12 @@ class WatchedPath:
             return self.__parent.path / self.__path
         return self.__path
 
-    def add_path(self, path: PathType, descriptor: int) -> WatchedPath:
-        watched_path = WatchedPath(path, descriptor, parent=self)
+    def add_path(
+        self, path: PathType, descriptor: int, initial: bool | None = None
+    ) -> WatchedPath:
+        watched_path = WatchedPath(
+            path, descriptor, self.__event_queue, initial=initial, parent=self
+        )
         self.__childs.append(watched_path)
         return watched_path
 
@@ -70,31 +94,33 @@ class WatchManager:
 
         self.__watched_paths: list[WatchedPath] = list()
 
-    def add_paths(self, *paths: UserPathType) -> None:
+    def add_paths(self, *paths: UserPathType, initial: bool | None = None) -> None:
         for path in paths:
-            self.add_path(path)
+            self.add_path(path, initial=initial)
 
-    def add_path(self, path: UserPathType) -> None:
+    def add_path(self, path: UserPathType, initial: bool | None = None) -> None:
         path = PathType(path)
 
-        self.__add_path(path)
+        self.__add_path(path, initial=initial)
 
         if path.is_dir():
             for rootpath, dirnames, filenames in os.walk(path):
                 root = PathType(rootpath)
                 for dirname in dirnames:
-                    self.__add_path(root / dirname)
+                    self.__add_path(root / dirname, initial=initial)
                 for filename in filenames:
-                    self.__add_path(root / filename)
+                    self.__add_path(root / filename, initial=initial)
 
-    def __add_path(self, path: PathType) -> None:
+    def __add_path(self, path: PathType, initial: bool | None = None) -> None:
         descriptor = self.__inotify.add_watch(path, inotify_simple.masks.ALL_EVENTS)
         parent = self.get_path(path.parent)
 
         if parent is not None:
-            watched_path = parent.add_path(path, descriptor)
+            watched_path = parent.add_path(path, descriptor, initial=initial)
         else:
-            watched_path = WatchedPath(path, descriptor)
+            watched_path = WatchedPath(
+                path, descriptor, self.__event_queue, initial=initial
+            )
 
         self.__watched_paths.append(watched_path)
 
@@ -171,7 +197,7 @@ class InotifyWatcher:
         self.__event_queue: Queue[Event | None] = Queue()
 
         self.__watch_manager = WatchManager(self.__event_queue)
-        self.__watch_manager.add_paths(*paths)
+        self.__watch_manager.add_paths(*paths, initial=True)
 
         self.__start()
 
