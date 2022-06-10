@@ -80,6 +80,10 @@ class InotifyEventTest:
             ")"
         )
 
+    def __repr__(self) -> str:
+        """Return the object representation string."""
+        return str(self)
+
     def match(self, **kwargs: Any) -> bool:
         """Test the object for matching criteria.
 
