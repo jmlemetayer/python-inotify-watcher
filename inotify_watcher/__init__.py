@@ -10,6 +10,7 @@ import pathlib
 import select
 import threading
 from queue import Queue
+from types import TracebackType
 from typing import Callable
 from typing import NamedTuple
 from typing import Union
@@ -206,6 +207,25 @@ class InotifyWatcher:
 
     def __del__(self) -> None:
         """Ensure that every resources has been properly closed."""
+        self.close()
+
+    def __enter__(self) -> InotifyWatcher:
+        """Enter the runtime context related to this object.
+
+        Returns
+        -------
+        InotifyWatcher
+            The inotify watcher object.
+        """
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        """Exit the runtime context related to this object."""
         self.close()
 
     def __start(self) -> None:
