@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-import pathlib
 
 from . import InotifyTracker
+from .conftest import TestPathsType
 from inotify_watcher import InotifyWatcher
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class TestWatched:
     }
 
     def test_parent_file(
-        self, test_paths: dict[str, pathlib.Path], inotify_tracker: InotifyTracker
+        self, test_paths: TestPathsType, inotify_tracker: InotifyTracker
     ) -> None:
         """Check inotify events when updating a parent file."""
         parent_file = test_paths["parent_file"]
@@ -34,7 +34,7 @@ class TestWatched:
             assert inotify_tracker.file_watched[0] == parent_file
 
     def test_parent_dir(
-        self, test_paths: dict[str, pathlib.Path], inotify_tracker: InotifyTracker
+        self, test_paths: TestPathsType, inotify_tracker: InotifyTracker
     ) -> None:
         """Check inotify events when updating a parent directory."""
         parent_dir = test_paths["parent_dir"]
@@ -45,7 +45,7 @@ class TestWatched:
             assert inotify_tracker.dir_watched[0] == parent_dir
 
     def test_child_file(
-        self, test_paths: dict[str, pathlib.Path], inotify_tracker: InotifyTracker
+        self, test_paths: TestPathsType, inotify_tracker: InotifyTracker
     ) -> None:
         """Check inotify events when updating a child file."""
         parent_dir = test_paths["child_file.parent"]
@@ -58,7 +58,7 @@ class TestWatched:
             assert inotify_tracker.file_watched[0] == child_file
 
     def test_child_dir(
-        self, test_paths: dict[str, pathlib.Path], inotify_tracker: InotifyTracker
+        self, test_paths: TestPathsType, inotify_tracker: InotifyTracker
     ) -> None:
         """Check inotify events when updating a child directory."""
         parent_dir = test_paths["child_dir.parent"]
