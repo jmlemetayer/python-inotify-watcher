@@ -72,6 +72,42 @@ class TestWatched:
             assert inotify_tracker.dir_watched[1] == child_dir
 
 
+class TestCreated:
+    """Test cases related to the created event."""
+
+    test_paths_config = {
+        "parent_dir": {"path": "dir", "is_dir": True},
+    }
+
+    def test_inotify_child_file(
+        self, test_paths: dict[str, pathlib.Path], inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when creating a child file."""
+        parent_dir = test_paths["parent_dir"]
+        child_file = parent_dir / "child_file"
+        child_file.touch()
+        events = inotify_test.read_events()
+        assert len(events) == 3
+        assert events[0].match(path=parent_dir, name=child_file.name, flags=["CREATE"])
+        assert events[1].match(path=parent_dir, name=child_file.name, flags=["OPEN"])
+        assert events[2].match(
+            path=parent_dir, name=child_file.name, flags=["CLOSE_WRITE"]
+        )
+
+    def test_inotify_child_dir(
+        self, test_paths: dict[str, pathlib.Path], inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when creating a child directory."""
+        parent_dir = test_paths["parent_dir"]
+        child_dir = parent_dir / "child_dir"
+        child_dir.mkdir()
+        events = inotify_test.read_events()
+        assert len(events) == 1
+        assert events[0].match(
+            path=parent_dir, name=child_dir.name, flags=["CREATE", "ISDIR"]
+        )
+
+
 class TestUpdated:
     """Test cases related to the updated event."""
 
