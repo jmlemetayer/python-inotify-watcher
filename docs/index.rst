@@ -11,6 +11,8 @@ Welcome to inotify_watcher's documentation
    :target: https://github.com/jmlemetayer/python-inotify-watcher/actions
 .. image:: https://results.pre-commit.ci/badge/github/jmlemetayer/python-inotify-watcher/main.svg
    :target: https://results.pre-commit.ci/latest/github/jmlemetayer/python-inotify-watcher/main
+.. image:: https://img.shields.io/codecov/c/gh/jmlemetayer/python-inotify-watcher/main
+   :target: https://codecov.io/gh/jmlemetayer/python-inotify-watcher
 
 *An easy way to use inotify*
 

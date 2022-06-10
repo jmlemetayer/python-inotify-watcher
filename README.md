@@ -5,6 +5,7 @@
 [![License Status][license-badge]][license-link]
 [![Build Status][build-badge]][build-link]
 [![Quality Status][pre-commit-badge]][pre-commit-link]
+[![Coverage Status][coverage-badge]][coverage-link]
 
 *An easy way to use inotify*
 
@@ -35,3 +36,5 @@ The `inotify_watcher` module is released under the [MIT License][license-link].
 [build-link]: https://github.com/jmlemetayer/python-inotify-watcher/actions
 [pre-commit-badge]: https://results.pre-commit.ci/badge/github/jmlemetayer/python-inotify-watcher/main.svg
 [pre-commit-link]: https://results.pre-commit.ci/latest/github/jmlemetayer/python-inotify-watcher/main
+[coverage-badge]: https://img.shields.io/codecov/c/gh/jmlemetayer/python-inotify-watcher/main
+[coverage-link]: https://codecov.io/gh/jmlemetayer/python-inotify-watcher
