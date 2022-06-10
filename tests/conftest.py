@@ -7,6 +7,7 @@ import pathlib
 import pytest
 
 from . import InotifyTest
+from . import InotifyTracker
 
 logger = logging.getLogger(__name__)
 
@@ -128,3 +129,9 @@ def inotify_test(
         inotify.add_watch(path)
 
     return inotify
+
+
+@pytest.fixture(scope="function")
+def inotify_tracker() -> InotifyTracker:
+    """Return a new inotify tracker object."""
+    return InotifyTracker()

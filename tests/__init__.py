@@ -13,6 +13,9 @@ from typing import Any
 
 import inotify_simple
 
+from inotify_watcher import HandlerType
+from inotify_watcher import PathType
+
 logger = logging.getLogger(__name__)
 
 
@@ -153,3 +156,111 @@ class InotifyTest:
             InotifyEventTest(e, self.__wd_paths)
             for e in self.__inotify.read(timeout=100, read_delay=100)
         ]
+
+
+class InotifyTracker:
+    """A class to track the inotify events during a test."""
+
+    def __init__(self) -> None:
+        self.file_watched: list[PathType] = list()
+        self.file_created: list[PathType] = list()
+        self.file_updated: list[PathType] = list()
+        self.file_modified: list[PathType] = list()
+        self.file_moved: list[tuple[PathType, PathType]] = list()
+        self.file_deleted: list[PathType] = list()
+        self.file_gone: list[PathType] = list()
+        self.dir_watched: list[PathType] = list()
+        self.dir_created: list[PathType] = list()
+        self.dir_updated: list[PathType] = list()
+        self.dir_moved: list[tuple[PathType, PathType]] = list()
+        self.dir_deleted: list[PathType] = list()
+        self.dir_gone: list[PathType] = list()
+
+    def file_watched_handle(self, path: PathType) -> None:
+        """Handle for the file_watched events."""
+        self.file_watched.append(path)
+
+    def file_created_handle(self, path: PathType) -> None:
+        """Handle for the file_created events."""
+        self.file_created.append(path)
+
+    def file_updated_handle(self, path: PathType) -> None:
+        """Handle for the file_updated events."""
+        self.file_updated.append(path)
+
+    def file_modified_handle(self, path: PathType) -> None:
+        """Handle for the file_modified events."""
+        self.file_modified.append(path)
+
+    def file_moved_handle(self, path: PathType, new_path: PathType) -> None:
+        """Handle for the file_moved events."""
+        self.file_moved.append((path, new_path))
+
+    def file_deleted_handle(self, path: PathType) -> None:
+        """Handle for the file_deleted events."""
+        self.file_deleted.append(path)
+
+    def file_gone_handle(self, path: PathType) -> None:
+        """Handle for the file_gone events."""
+        self.file_gone.append(path)
+
+    def dir_watched_handle(self, path: PathType) -> None:
+        """Handle for the dir_watched events."""
+        self.dir_watched.append(path)
+
+    def dir_created_handle(self, path: PathType) -> None:
+        """Handle for the dir_created events."""
+        self.dir_created.append(path)
+
+    def dir_updated_handle(self, path: PathType) -> None:
+        """Handle for the dir_updated events."""
+        self.dir_updated.append(path)
+
+    def dir_moved_handle(self, path: PathType, new_path: PathType) -> None:
+        """Handle for the dir_moved events."""
+        self.dir_moved.append((path, new_path))
+
+    def dir_deleted_handle(self, path: PathType) -> None:
+        """Handle for the dir_deleted events."""
+        self.dir_deleted.append(path)
+
+    def dir_gone_handle(self, path: PathType) -> None:
+        """Handle for the dir_gone events."""
+        self.dir_gone.append(path)
+
+    def handlers_kwargs(self) -> dict[str, HandlerType]:
+        """Return a dictionary with all the handlers pre-configured."""
+        return {
+            "file_watched": self.file_watched_handle,
+            "file_created": self.file_created_handle,
+            "file_updated": self.file_updated_handle,
+            "file_modified": self.file_modified_handle,
+            "file_moved": self.file_moved_handle,
+            "file_deleted": self.file_deleted_handle,
+            "file_gone": self.file_gone_handle,
+            "dir_watched": self.dir_watched_handle,
+            "dir_created": self.dir_created_handle,
+            "dir_updated": self.dir_updated_handle,
+            "dir_moved": self.dir_moved_handle,
+            "dir_deleted": self.dir_deleted_handle,
+            "dir_gone": self.dir_gone_handle,
+        }
+
+    @property
+    def event_count(self) -> int:
+        """Return the total number of event received."""
+        return (
+            len(self.file_watched)
+            + len(self.file_created)
+            + len(self.file_updated)
+            + len(self.file_modified)
+            + len(self.file_moved)
+            + len(self.file_deleted)
+            + len(self.file_gone)
+            + len(self.dir_watched)
+            + len(self.dir_created)
+            + len(self.dir_updated)
+            + len(self.dir_moved)
+            + len(self.dir_deleted)
+            + len(self.dir_gone)
+        )
