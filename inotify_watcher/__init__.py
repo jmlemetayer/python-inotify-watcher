@@ -114,7 +114,7 @@ class WatchManager:
 
     def __add_path(self, path: PathType, initial: bool | None = None) -> None:
         descriptor = self.__inotify.add_watch(path, inotify_simple.masks.ALL_EVENTS)
-        parent = self.get_path(path.parent)
+        parent = self.__get_path(path.parent)
 
         if parent is not None:
             watched_path = parent.add_path(path, descriptor, initial=initial)
@@ -125,7 +125,7 @@ class WatchManager:
 
         self.__watched_paths.append(watched_path)
 
-    def get_path(self, path_or_descriptor: PathType | int) -> WatchedPath | None:
+    def __get_path(self, path_or_descriptor: PathType | int) -> WatchedPath | None:
         if isinstance(path_or_descriptor, PathType):
             for watched_path in self.__watched_paths:
                 if watched_path.path == path_or_descriptor:
@@ -159,7 +159,15 @@ class WatchManager:
             self.__inotify.close()
 
     def __handle_event(self, event: inotify_simple.Event) -> None:
-        pass  # TODO Handle the event.
+        event_owner = self.__get_path(event.wd)
+
+        assert (
+            event_owner is not None
+        ), "No watched path associated with event descriptor"
+
+        if event.mask & inotify_simple.flags.CREATE:
+            assert event.name is not None, "Invalid CREATE event without name"
+            self.__add_path(event_owner.path / event.name)
 
 
 class InotifyWatcher:
