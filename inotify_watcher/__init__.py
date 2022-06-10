@@ -140,6 +140,9 @@ class WatchManager:
             self.__write.write(b"\x00")
             self.__write.close()
 
+    def __del__(self) -> None:
+        self.close()
+
     def watch(self) -> None:
         rlist, _, _ = select.select([self.__inotify.fileno(), self.__read_fd], [], [])
 
