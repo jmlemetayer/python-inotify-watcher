@@ -28,7 +28,9 @@ class TestWatched:
     ) -> None:
         """Check watcher events when updating a parent file."""
         parent_file = test_paths["parent_file"]
-        with InotifyWatcher(parent_file, **inotify_tracker.handlers_kwargs()):
+        with InotifyWatcher(
+            parent_file, **inotify_tracker.handlers_kwargs(watched=True)
+        ):
             assert inotify_tracker.event_count == 1
             assert inotify_tracker.file_watched[0] == parent_file
 
@@ -37,7 +39,9 @@ class TestWatched:
     ) -> None:
         """Check watcher events when updating a parent directory."""
         parent_dir = test_paths["parent_dir"]
-        with InotifyWatcher(parent_dir, **inotify_tracker.handlers_kwargs()):
+        with InotifyWatcher(
+            parent_dir, **inotify_tracker.handlers_kwargs(watched=True)
+        ):
             assert inotify_tracker.event_count == 1
             assert inotify_tracker.dir_watched[0] == parent_dir
 
@@ -47,7 +51,9 @@ class TestWatched:
         """Check watcher events when updating a child file."""
         parent_dir = test_paths["child_file.parent"]
         child_file = test_paths["child_file"]
-        with InotifyWatcher(parent_dir, **inotify_tracker.handlers_kwargs()):
+        with InotifyWatcher(
+            parent_dir, **inotify_tracker.handlers_kwargs(watched=True)
+        ):
             assert inotify_tracker.event_count == 2
             assert inotify_tracker.dir_watched[0] == parent_dir
             assert inotify_tracker.file_watched[0] == child_file
@@ -58,7 +64,9 @@ class TestWatched:
         """Check watcher events when updating a child directory."""
         parent_dir = test_paths["child_dir.parent"]
         child_dir = test_paths["child_dir"]
-        with InotifyWatcher(parent_dir, **inotify_tracker.handlers_kwargs()):
+        with InotifyWatcher(
+            parent_dir, **inotify_tracker.handlers_kwargs(watched=True)
+        ):
             assert inotify_tracker.event_count == 2
             assert inotify_tracker.dir_watched[0] == parent_dir
             assert inotify_tracker.dir_watched[1] == child_dir
