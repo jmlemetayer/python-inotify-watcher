@@ -232,23 +232,41 @@ class InotifyTracker:
         """Handle for the dir_gone events."""
         self.dir_gone.append(path)
 
-    def handlers_kwargs(self) -> dict[str, HandlerType]:
+    def handlers_kwargs(
+        self,
+        watched: bool | None = None,
+        no_file: bool | None = None,
+        no_dir: bool | None = None,
+    ) -> dict[str, HandlerType]:
         """Return a dictionary with all the handlers pre-configured."""
-        return {
-            "file_watched": self.file_watched_handle,
-            "file_created": self.file_created_handle,
-            "file_updated": self.file_updated_handle,
-            "file_modified": self.file_modified_handle,
-            "file_moved": self.file_moved_handle,
-            "file_deleted": self.file_deleted_handle,
-            "file_gone": self.file_gone_handle,
-            "dir_watched": self.dir_watched_handle,
-            "dir_created": self.dir_created_handle,
-            "dir_updated": self.dir_updated_handle,
-            "dir_moved": self.dir_moved_handle,
-            "dir_deleted": self.dir_deleted_handle,
-            "dir_gone": self.dir_gone_handle,
-        }
+        handlers: dict[str, HandlerType] = dict()
+        if no_file is not True and watched is True:
+            handlers["file_watched"] = self.file_watched_handle
+        if no_file is not True:
+            handlers["file_created"] = self.file_created_handle
+        if no_file is not True:
+            handlers["file_updated"] = self.file_updated_handle
+        if no_file is not True:
+            handlers["file_modified"] = self.file_modified_handle
+        if no_file is not True:
+            handlers["file_moved"] = self.file_moved_handle
+        if no_file is not True:
+            handlers["file_deleted"] = self.file_deleted_handle
+        if no_file is not True:
+            handlers["file_gone"] = self.file_gone_handle
+        if no_dir is not True and watched is True:
+            handlers["dir_watched"] = self.dir_watched_handle
+        if no_dir is not True:
+            handlers["dir_created"] = self.dir_created_handle
+        if no_dir is not True:
+            handlers["dir_updated"] = self.dir_updated_handle
+        if no_dir is not True:
+            handlers["dir_moved"] = self.dir_moved_handle
+        if no_dir is not True:
+            handlers["dir_deleted"] = self.dir_deleted_handle
+        if no_dir is not True:
+            handlers["dir_gone"] = self.dir_gone_handle
+        return handlers
 
     @property
     def event_count(self) -> int:
