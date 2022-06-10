@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
+from typing import Dict
 
 import pytest
 
@@ -11,11 +12,11 @@ from . import InotifyTracker
 
 logger = logging.getLogger(__name__)
 
+TestPathsType = Dict[str, pathlib.Path]
+
 
 @pytest.fixture(scope="function")
-def test_paths(
-    request: pytest.FixtureRequest, tmp_path: pathlib.Path
-) -> dict[str, pathlib.Path]:
+def test_paths(request: pytest.FixtureRequest, tmp_path: pathlib.Path) -> TestPathsType:
     """Generate a test tree based on a configuration.
 
     The configuration is a dictionary with keys:
@@ -80,7 +81,7 @@ def test_paths(
     ...         print(test_paths["test_file"])
     /tmp/pytest-of-user/pytest-42/test_class0/class_dir/class_file
     """
-    test_paths: dict[str, pathlib.Path] = dict()
+    test_paths: TestPathsType = dict()
 
     if request.cls:
         test_paths_config = request.cls.test_paths_config or dict()
@@ -103,9 +104,7 @@ def test_paths(
 
 
 @pytest.fixture(scope="function")
-def inotify_test(
-    test_paths: dict[str, pathlib.Path], tmp_path: pathlib.Path
-) -> InotifyTest:
+def inotify_test(test_paths: TestPathsType, tmp_path: pathlib.Path) -> InotifyTest:
     """Generate a pre-configured test instance of `inotify_simple.INotify`.
 
     Parameters

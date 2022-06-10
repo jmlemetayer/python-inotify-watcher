@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-import pathlib
 
 from . import InotifyTest
+from .conftest import TestPathsType
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class TestCreated:
     }
 
     def test_child_file(
-        self, test_paths: dict[str, pathlib.Path], inotify_test: InotifyTest
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when creating a child file."""
         parent_dir = test_paths["parent_dir"]
@@ -32,7 +32,7 @@ class TestCreated:
         )
 
     def test_child_dir(
-        self, test_paths: dict[str, pathlib.Path], inotify_test: InotifyTest
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when creating a child directory."""
         parent_dir = test_paths["parent_dir"]
@@ -56,7 +56,7 @@ class TestUpdated:
     }
 
     def test_parent_file(
-        self, test_paths: dict[str, pathlib.Path], inotify_test: InotifyTest
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when updating a parent file."""
         parent_file = test_paths["parent_file"]
@@ -66,7 +66,7 @@ class TestUpdated:
         assert events[0].match(path=parent_file, name=None, flags=["ATTRIB"])
 
     def test_parent_dir(
-        self, test_paths: dict[str, pathlib.Path], inotify_test: InotifyTest
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when updating a parent directory."""
         parent_dir = test_paths["parent_dir"]
@@ -76,7 +76,7 @@ class TestUpdated:
         assert events[0].match(path=parent_dir, name=None, flags=["ATTRIB", "ISDIR"])
 
     def test_child_file(
-        self, test_paths: dict[str, pathlib.Path], inotify_test: InotifyTest
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when updating a child file."""
         parent_dir = test_paths["parent_dir"]
@@ -88,7 +88,7 @@ class TestUpdated:
         assert events[1].match(path=child_file, name=None, flags=["ATTRIB"])
 
     def test_child_dir(
-        self, test_paths: dict[str, pathlib.Path], inotify_test: InotifyTest
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when updating a child directory."""
         parent_dir = test_paths["parent_dir"]
