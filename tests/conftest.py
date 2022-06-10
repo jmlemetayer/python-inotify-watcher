@@ -131,6 +131,6 @@ def inotify_test(test_paths: TestPathsType, tmp_path: pathlib.Path) -> InotifyTe
 
 
 @pytest.fixture(scope="function")
-def inotify_tracker() -> InotifyTracker:
+def tracker() -> InotifyTracker:
     """Return a new inotify tracker object."""
     return InotifyTracker()
