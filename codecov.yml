@@ -1,4 +1,5 @@
-status:
+coverage:
+  status:
     project:
       default:
         target: auto
