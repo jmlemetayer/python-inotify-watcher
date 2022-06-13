@@ -142,3 +142,68 @@ class TestModified:
             path=parent_dir, name=child_file.name, flags=["CLOSE_WRITE"]
         )
         assert events[5].match(path=child_file, name=None, flags=["CLOSE_WRITE"])
+
+
+class TestDeleted:
+    """Test cases related to the deleted event."""
+
+    test_paths_config = {
+        "parent_file": {"path": "parent_file"},
+        "parent_dir": {"path": "parent_dir", "is_dir": True},
+        "child_file.parent": {"path": "child_file.parent", "is_dir": True},
+        "child_file": {"path": "child_file.parent/child_file"},
+        "child_dir.parent": {"path": "child_dir.parent", "is_dir": True},
+        "child_dir": {"path": "child_dir.parent/child_dir", "is_dir": True},
+    }
+
+    def test_parent_file(
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when deleting a parent file."""
+        parent_file = test_paths["parent_file"]
+        parent_file.unlink()
+        events = inotify_test.read_events()
+        assert len(events) == 3
+        assert events[0].match(path=parent_file, name=None, flags=["ATTRIB"])
+        assert events[1].match(path=parent_file, name=None, flags=["DELETE_SELF"])
+        assert events[2].match(path=parent_file, name=None, flags=["IGNORED"])
+
+    def test_parent_dir(
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when deleting a parent directory."""
+        parent_dir = test_paths["parent_dir"]
+        parent_dir.rmdir()
+        events = inotify_test.read_events()
+        assert len(events) == 2
+        assert events[0].match(path=parent_dir, name=None, flags=["DELETE_SELF"])
+        assert events[1].match(path=parent_dir, name=None, flags=["IGNORED"])
+
+    def test_child_file(
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when deleting a child file."""
+        parent_dir = test_paths["child_file.parent"]
+        child_file = test_paths["child_file"]
+        child_file.unlink()
+        events = inotify_test.read_events()
+        assert len(events) == 4
+        assert events[0].match(path=child_file, name=None, flags=["ATTRIB"])
+        assert events[1].match(path=child_file, name=None, flags=["DELETE_SELF"])
+        assert events[2].match(path=child_file, name=None, flags=["IGNORED"])
+        assert events[3].match(path=parent_dir, name=child_file.name, flags=["DELETE"])
+
+    def test_child_dir(
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when deleting a child directory."""
+        parent_dir = test_paths["child_dir.parent"]
+        child_dir = test_paths["child_dir"]
+        child_dir.rmdir()
+        events = inotify_test.read_events()
+        assert len(events) == 3
+        assert events[0].match(path=child_dir, name=None, flags=["DELETE_SELF"])
+        assert events[1].match(path=child_dir, name=None, flags=["IGNORED"])
+        assert events[2].match(
+            path=parent_dir, name=child_dir.name, flags=["DELETE", "ISDIR"]
+        )
