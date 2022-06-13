@@ -209,3 +209,74 @@ class TestDeleted:
         assert events[2].match(
             path=root_dir, name=child_dir.name, flags=["DELETE", "ISDIR"]
         )
+
+
+class TestMoved:
+    """Test cases related to the moved event."""
+
+    test_paths_config = {
+        "parent_file": {"path": "parent_file"},
+        "parent_dir": {"path": "parent_dir", "is_dir": True},
+        "child_file.root": {"path": "child_file", "is_dir": True},
+        "child_file": {"path": "child_file/child_file"},
+        "child_dir.root": {"path": "child_dir", "is_dir": True},
+        "child_dir": {"path": "child_dir/child_dir", "is_dir": True},
+    }
+
+    def test_parent_file(
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when moving a parent file."""
+        parent_file = test_paths["parent_file"]
+        new_file = parent_file.with_name("new_file")
+        parent_file.replace(new_file)
+        events = inotify_test.read_events()
+        assert len(events) == 1
+        assert events[0].match(path=parent_file, name=None, flags=["MOVE_SELF"])
+
+    def test_parent_dir(
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when moving a parent directory."""
+        parent_dir = test_paths["parent_dir"]
+        new_dir = parent_dir.with_name("new_dir")
+        parent_dir.replace(new_dir)
+        events = inotify_test.read_events()
+        assert len(events) == 1
+        assert events[0].match(path=parent_dir, name=None, flags=["MOVE_SELF"])
+
+    def test_child_file(
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when moving a child file."""
+        root_dir = test_paths["child_file.root"]
+        child_file = test_paths["child_file"]
+        new_file = child_file.with_name("new_file")
+        child_file.replace(new_file)
+        events = inotify_test.read_events()
+        assert len(events) == 3
+        assert events[0].match(
+            path=root_dir, name=child_file.name, flags=["MOVED_FROM"]
+        )
+        assert events[1].match(path=root_dir, name=new_file.name, flags=["MOVED_TO"])
+        assert events[0].cookie == events[1].cookie != 0
+        assert events[2].match(path=child_file, name=None, flags=["MOVE_SELF"])
+
+    def test_child_dir(
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when moving a child directory."""
+        root_dir = test_paths["child_dir.root"]
+        child_dir = test_paths["child_dir"]
+        new_dir = child_dir.with_name("new_dir")
+        child_dir.replace(new_dir)
+        events = inotify_test.read_events()
+        assert len(events) == 3
+        assert events[0].match(
+            path=root_dir, name=child_dir.name, flags=["MOVED_FROM", "ISDIR"]
+        )
+        assert events[1].match(
+            path=root_dir, name=new_dir.name, flags=["MOVED_TO", "ISDIR"]
+        )
+        assert events[0].cookie == events[1].cookie != 0
+        assert events[2].match(path=child_dir, name=None, flags=["MOVE_SELF"])
