@@ -16,10 +16,10 @@ class TestWatched:
     test_paths_config = {
         "parent_file": {"path": "parent_file"},
         "parent_dir": {"path": "parent_dir", "is_dir": True},
-        "child_file.parent": {"path": "child_file.parent", "is_dir": True},
-        "child_file": {"path": "child_file.parent/child_file"},
-        "child_dir.parent": {"path": "child_dir.parent", "is_dir": True},
-        "child_dir": {"path": "child_dir.parent/child_dir", "is_dir": True},
+        "child_file.root": {"path": "child_file", "is_dir": True},
+        "child_file": {"path": "child_file/child_file"},
+        "child_dir.root": {"path": "child_dir", "is_dir": True},
+        "child_dir": {"path": "child_dir/child_dir", "is_dir": True},
     }
 
     def test_parent_file(
@@ -46,24 +46,24 @@ class TestWatched:
         self, test_paths: TestPathsType, tracker: InotifyTracker
     ) -> None:
         """Check inotify events when updating a child file."""
-        parent_dir = test_paths["child_file.parent"]
+        root_dir = test_paths["child_file.root"]
         child_file = test_paths["child_file"]
-        with InotifyWatcher(parent_dir, **tracker.handlers_kwargs(watched=True)) as w:
+        with InotifyWatcher(root_dir, **tracker.handlers_kwargs(watched=True)) as w:
             w.wait(timeout=0.1)
             assert tracker.event_count == 2
-            assert tracker.dir_watched[0] == parent_dir
+            assert tracker.dir_watched[0] == root_dir
             assert tracker.file_watched[0] == child_file
 
     def test_child_dir(
         self, test_paths: TestPathsType, tracker: InotifyTracker
     ) -> None:
         """Check inotify events when updating a child directory."""
-        parent_dir = test_paths["child_dir.parent"]
+        root_dir = test_paths["child_dir.root"]
         child_dir = test_paths["child_dir"]
-        with InotifyWatcher(parent_dir, **tracker.handlers_kwargs(watched=True)) as w:
+        with InotifyWatcher(root_dir, **tracker.handlers_kwargs(watched=True)) as w:
             w.wait(timeout=0.1)
             assert tracker.event_count == 2
-            assert tracker.dir_watched[0] == parent_dir
+            assert tracker.dir_watched[0] == root_dir
             assert tracker.dir_watched[1] == child_dir
 
 
@@ -71,16 +71,16 @@ class TestCreated:
     """Test cases related to the created event."""
 
     test_paths_config = {
-        "parent_dir": {"path": "dir", "is_dir": True},
+        "root_dir": {"path": "root_dir", "is_dir": True},
     }
 
     def test_child_file(
         self, test_paths: TestPathsType, tracker: InotifyTracker
     ) -> None:
         """Check inotify events when creating a child file."""
-        parent_dir = test_paths["parent_dir"]
-        child_file = parent_dir / "child_file"
-        with InotifyWatcher(parent_dir, **tracker.handlers_kwargs()) as w:
+        root_dir = test_paths["root_dir"]
+        child_file = root_dir / "child_file"
+        with InotifyWatcher(root_dir, **tracker.handlers_kwargs()) as w:
             child_file.touch()
             w.wait(timeout=0.1)
             assert tracker.event_count == 1
@@ -90,9 +90,9 @@ class TestCreated:
         self, test_paths: TestPathsType, tracker: InotifyTracker
     ) -> None:
         """Check inotify events when creating a child directory."""
-        parent_dir = test_paths["parent_dir"]
-        child_dir = parent_dir / "child_dir"
-        with InotifyWatcher(parent_dir, **tracker.handlers_kwargs()) as w:
+        root_dir = test_paths["root_dir"]
+        child_dir = root_dir / "child_dir"
+        with InotifyWatcher(root_dir, **tracker.handlers_kwargs()) as w:
             child_dir.mkdir()
             w.wait(timeout=0.1)
             assert tracker.event_count == 1

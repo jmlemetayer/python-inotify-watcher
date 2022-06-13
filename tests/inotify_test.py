@@ -13,35 +13,35 @@ class TestCreated:
     """Test cases related to the created event."""
 
     test_paths_config = {
-        "parent_dir": {"path": "dir", "is_dir": True},
+        "root_dir": {"path": "root_dir", "is_dir": True},
     }
 
     def test_child_file(
         self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when creating a child file."""
-        parent_dir = test_paths["parent_dir"]
-        child_file = parent_dir / "child_file"
+        root_dir = test_paths["root_dir"]
+        child_file = root_dir / "child_file"
         child_file.touch()
         events = inotify_test.read_events()
         assert len(events) == 3
-        assert events[0].match(path=parent_dir, name=child_file.name, flags=["CREATE"])
-        assert events[1].match(path=parent_dir, name=child_file.name, flags=["OPEN"])
+        assert events[0].match(path=root_dir, name=child_file.name, flags=["CREATE"])
+        assert events[1].match(path=root_dir, name=child_file.name, flags=["OPEN"])
         assert events[2].match(
-            path=parent_dir, name=child_file.name, flags=["CLOSE_WRITE"]
+            path=root_dir, name=child_file.name, flags=["CLOSE_WRITE"]
         )
 
     def test_child_dir(
         self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when creating a child directory."""
-        parent_dir = test_paths["parent_dir"]
-        child_dir = parent_dir / "child_dir"
+        root_dir = test_paths["root_dir"]
+        child_dir = root_dir / "child_dir"
         child_dir.mkdir()
         events = inotify_test.read_events()
         assert len(events) == 1
         assert events[0].match(
-            path=parent_dir, name=child_dir.name, flags=["CREATE", "ISDIR"]
+            path=root_dir, name=child_dir.name, flags=["CREATE", "ISDIR"]
         )
 
 
@@ -49,10 +49,12 @@ class TestUpdated:
     """Test cases related to the updated event."""
 
     test_paths_config = {
-        "parent_file": {"path": "file", "mode": 0o644},
-        "parent_dir": {"path": "dir", "is_dir": True, "mode": 0o755},
-        "child_file": {"path": "dir/file", "mode": 0o644},
-        "child_dir": {"path": "dir/dir", "is_dir": True, "mode": 0o755},
+        "parent_file": {"path": "parent_file", "mode": 0o644},
+        "parent_dir": {"path": "parent_dir", "is_dir": True, "mode": 0o755},
+        "child_file.root": {"path": "child_file", "is_dir": True},
+        "child_file": {"path": "child_file/child_file", "mode": 0o644},
+        "child_dir.root": {"path": "child_dir", "is_dir": True},
+        "child_dir": {"path": "child_dir/child_dir", "is_dir": True, "mode": 0o755},
     }
 
     def test_parent_file(
@@ -79,25 +81,25 @@ class TestUpdated:
         self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when updating a child file."""
-        parent_dir = test_paths["parent_dir"]
+        root_dir = test_paths["child_file.root"]
         child_file = test_paths["child_file"]
         child_file.chmod(0o640)
         events = inotify_test.read_events()
         assert len(events) == 2
-        assert events[0].match(path=parent_dir, name=child_file.name, flags=["ATTRIB"])
+        assert events[0].match(path=root_dir, name=child_file.name, flags=["ATTRIB"])
         assert events[1].match(path=child_file, name=None, flags=["ATTRIB"])
 
     def test_child_dir(
         self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when updating a child directory."""
-        parent_dir = test_paths["parent_dir"]
+        root_dir = test_paths["child_dir.root"]
         child_dir = test_paths["child_dir"]
         child_dir.chmod(0o750)
         events = inotify_test.read_events()
         assert len(events) == 2
         assert events[0].match(
-            path=parent_dir, name=child_dir.name, flags=["ATTRIB", "ISDIR"]
+            path=root_dir, name=child_dir.name, flags=["ATTRIB", "ISDIR"]
         )
         assert events[1].match(path=child_dir, name=None, flags=["ATTRIB", "ISDIR"])
 
@@ -106,9 +108,9 @@ class TestModified:
     """Test cases related to the modified event."""
 
     test_paths_config = {
-        "parent_file": {"path": "file"},
-        "parent_dir": {"path": "dir", "is_dir": True},
-        "child_file": {"path": "dir/file"},
+        "parent_file": {"path": "parent_file"},
+        "child_file.root": {"path": "child_file", "is_dir": True},
+        "child_file": {"path": "child_file/child_file"},
     }
 
     def test_parent_file(
@@ -128,18 +130,18 @@ class TestModified:
         self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when modifying a child file."""
-        parent_dir = test_paths["parent_dir"]
+        root_dir = test_paths["child_file.root"]
         child_file = test_paths["child_file"]
         with child_file.open("a") as f:
             f.write("Hello world")
         events = inotify_test.read_events()
         assert len(events) == 6
-        assert events[0].match(path=parent_dir, name=child_file.name, flags=["OPEN"])
+        assert events[0].match(path=root_dir, name=child_file.name, flags=["OPEN"])
         assert events[1].match(path=child_file, name=None, flags=["OPEN"])
-        assert events[2].match(path=parent_dir, name=child_file.name, flags=["MODIFY"])
+        assert events[2].match(path=root_dir, name=child_file.name, flags=["MODIFY"])
         assert events[3].match(path=child_file, name=None, flags=["MODIFY"])
         assert events[4].match(
-            path=parent_dir, name=child_file.name, flags=["CLOSE_WRITE"]
+            path=root_dir, name=child_file.name, flags=["CLOSE_WRITE"]
         )
         assert events[5].match(path=child_file, name=None, flags=["CLOSE_WRITE"])
 
@@ -150,10 +152,10 @@ class TestDeleted:
     test_paths_config = {
         "parent_file": {"path": "parent_file"},
         "parent_dir": {"path": "parent_dir", "is_dir": True},
-        "child_file.parent": {"path": "child_file.parent", "is_dir": True},
-        "child_file": {"path": "child_file.parent/child_file"},
-        "child_dir.parent": {"path": "child_dir.parent", "is_dir": True},
-        "child_dir": {"path": "child_dir.parent/child_dir", "is_dir": True},
+        "child_file.root": {"path": "child_file", "is_dir": True},
+        "child_file": {"path": "child_file/child_file"},
+        "child_dir.root": {"path": "child_dir", "is_dir": True},
+        "child_dir": {"path": "child_dir/child_dir", "is_dir": True},
     }
 
     def test_parent_file(
@@ -183,7 +185,7 @@ class TestDeleted:
         self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when deleting a child file."""
-        parent_dir = test_paths["child_file.parent"]
+        root_dir = test_paths["child_file.root"]
         child_file = test_paths["child_file"]
         child_file.unlink()
         events = inotify_test.read_events()
@@ -191,13 +193,13 @@ class TestDeleted:
         assert events[0].match(path=child_file, name=None, flags=["ATTRIB"])
         assert events[1].match(path=child_file, name=None, flags=["DELETE_SELF"])
         assert events[2].match(path=child_file, name=None, flags=["IGNORED"])
-        assert events[3].match(path=parent_dir, name=child_file.name, flags=["DELETE"])
+        assert events[3].match(path=root_dir, name=child_file.name, flags=["DELETE"])
 
     def test_child_dir(
         self, test_paths: TestPathsType, inotify_test: InotifyTest
     ) -> None:
         """Check inotify events when deleting a child directory."""
-        parent_dir = test_paths["child_dir.parent"]
+        root_dir = test_paths["child_dir.root"]
         child_dir = test_paths["child_dir"]
         child_dir.rmdir()
         events = inotify_test.read_events()
@@ -205,5 +207,5 @@ class TestDeleted:
         assert events[0].match(path=child_dir, name=None, flags=["DELETE_SELF"])
         assert events[1].match(path=child_dir, name=None, flags=["IGNORED"])
         assert events[2].match(
-            path=parent_dir, name=child_dir.name, flags=["DELETE", "ISDIR"]
+            path=root_dir, name=child_dir.name, flags=["DELETE", "ISDIR"]
         )
