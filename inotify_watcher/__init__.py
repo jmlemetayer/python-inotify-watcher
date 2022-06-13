@@ -179,6 +179,9 @@ class WatchManager:
         elif event.mask & inotify_simple.flags.ATTRIB and not event.name:
             event_owner.send_event("updated")
 
+        elif event.mask & inotify_simple.flags.MODIFY and not event.name:
+            event_owner.send_event("modified")
+
 
 class InotifyWatcher:
     """A class to watch inotify events.
