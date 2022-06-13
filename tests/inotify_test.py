@@ -100,3 +100,45 @@ class TestUpdated:
             path=parent_dir, name=child_dir.name, flags=["ATTRIB", "ISDIR"]
         )
         assert events[1].match(path=child_dir, name=None, flags=["ATTRIB", "ISDIR"])
+
+
+class TestModified:
+    """Test cases related to the modified event."""
+
+    test_paths_config = {
+        "parent_file": {"path": "file"},
+        "parent_dir": {"path": "dir", "is_dir": True},
+        "child_file": {"path": "dir/file"},
+    }
+
+    def test_parent_file(
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when modifying a parent file."""
+        parent_file = test_paths["parent_file"]
+        with parent_file.open("a") as f:
+            f.write("Hello world")
+        events = inotify_test.read_events()
+        assert len(events) == 3
+        assert events[0].match(path=parent_file, name=None, flags=["OPEN"])
+        assert events[1].match(path=parent_file, name=None, flags=["MODIFY"])
+        assert events[2].match(path=parent_file, name=None, flags=["CLOSE_WRITE"])
+
+    def test_child_file(
+        self, test_paths: TestPathsType, inotify_test: InotifyTest
+    ) -> None:
+        """Check inotify events when modifying a child file."""
+        parent_dir = test_paths["parent_dir"]
+        child_file = test_paths["child_file"]
+        with child_file.open("a") as f:
+            f.write("Hello world")
+        events = inotify_test.read_events()
+        assert len(events) == 6
+        assert events[0].match(path=parent_dir, name=child_file.name, flags=["OPEN"])
+        assert events[1].match(path=child_file, name=None, flags=["OPEN"])
+        assert events[2].match(path=parent_dir, name=child_file.name, flags=["MODIFY"])
+        assert events[3].match(path=child_file, name=None, flags=["MODIFY"])
+        assert events[4].match(
+            path=parent_dir, name=child_file.name, flags=["CLOSE_WRITE"]
+        )
+        assert events[5].match(path=child_file, name=None, flags=["CLOSE_WRITE"])
