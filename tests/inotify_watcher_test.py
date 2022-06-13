@@ -156,3 +156,38 @@ class TestUpdated:
             w.wait(timeout=0.1)
             assert tracker.event_count == 1
             assert tracker.dir_updated[0] == child_dir
+
+
+class TestModified:
+    """Test cases related to the modified event."""
+
+    test_paths_config = {
+        "parent_file": {"path": "parent_file"},
+        "child_file.root": {"path": "child_file", "is_dir": True},
+        "child_file": {"path": "child_file/child_file"},
+    }
+
+    def test_parent_file(
+        self, test_paths: TestPathsType, tracker: InotifyTracker
+    ) -> None:
+        """Check inotify events when modifying a parent file."""
+        parent_file = test_paths["parent_file"]
+        with InotifyWatcher(parent_file, **tracker.handlers_kwargs()) as w:
+            with parent_file.open("a") as f:
+                f.write("Hello world")
+            w.wait(timeout=0.1)
+            assert tracker.event_count == 1
+            assert tracker.file_modified[0] == parent_file
+
+    def test_child_file(
+        self, test_paths: TestPathsType, tracker: InotifyTracker
+    ) -> None:
+        """Check inotify events when modifying a child file."""
+        root_dir = test_paths["child_file.root"]
+        child_file = test_paths["child_file"]
+        with InotifyWatcher(root_dir, **tracker.handlers_kwargs()) as w:
+            with child_file.open("a") as f:
+                f.write("Hello world")
+            w.wait(timeout=0.1)
+            assert tracker.event_count == 1
+            assert tracker.file_modified[0] == child_file
