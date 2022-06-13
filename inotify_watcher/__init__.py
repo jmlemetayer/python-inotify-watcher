@@ -173,7 +173,7 @@ class WatchManager:
         ), "No watched path associated with event descriptor"
 
         if event.mask & inotify_simple.flags.CREATE:
-            assert event.name is not None, "Invalid CREATE event without name"
+            assert event.name, "Invalid CREATE event without name"
             self.__add_path(event_owner.path / event.name)
 
         elif event.mask & inotify_simple.flags.ATTRIB and not event.name:
