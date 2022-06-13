@@ -57,17 +57,24 @@ class WatchedPath:
             self.__path = path.relative_to(parent.path)
 
         if initial:
-            self.__send_event("watched", self.path)
+            self.send_event("watched")
         else:
-            self.__send_event("created", self.path)
+            self.send_event("created")
 
-    def __send_event(self, event_name: str, *paths: PathType) -> None:
+    def send_event(
+        self, event_name: str, secondary_path: PathType | None = None
+    ) -> None:
+        paths: list[PathType] = [self.path]
+
+        if secondary_path is not None:
+            paths.append(secondary_path)
+
         if self.__is_dir:
             event_name = f"dir_{event_name}"
         else:
             event_name = f"file_{event_name}"
 
-        self.__event_queue.put(Event(event_name, list(paths)))
+        self.__event_queue.put(Event(event_name, paths))
 
     @property
     def path(self) -> PathType:
@@ -168,6 +175,9 @@ class WatchManager:
         if event.mask & inotify_simple.flags.CREATE:
             assert event.name is not None, "Invalid CREATE event without name"
             self.__add_path(event_owner.path / event.name)
+
+        elif event.mask & inotify_simple.flags.ATTRIB and not event.name:
+            event_owner.send_event("updated")
 
 
 class InotifyWatcher:
