@@ -97,3 +97,62 @@ class TestCreated:
             w.wait(timeout=0.1)
             assert tracker.event_count == 1
             assert tracker.dir_created[0] == child_dir
+
+
+class TestUpdated:
+    """Test cases related to the updated event."""
+
+    test_paths_config = {
+        "parent_file": {"path": "parent_file", "mode": 0o644},
+        "parent_dir": {"path": "parent_dir", "is_dir": True, "mode": 0o755},
+        "child_file.root": {"path": "child_file", "is_dir": True},
+        "child_file": {"path": "child_file/child_file", "mode": 0o644},
+        "child_dir.root": {"path": "child_dir", "is_dir": True},
+        "child_dir": {"path": "child_dir/child_dir", "is_dir": True, "mode": 0o755},
+    }
+
+    def test_parent_file(
+        self, test_paths: TestPathsType, tracker: InotifyTracker
+    ) -> None:
+        """Check inotify events when updating a parent file."""
+        parent_file = test_paths["parent_file"]
+        with InotifyWatcher(parent_file, **tracker.handlers_kwargs()) as w:
+            parent_file.chmod(0o640)
+            w.wait(timeout=0.1)
+            assert tracker.event_count == 1
+            assert tracker.file_updated[0] == parent_file
+
+    def test_parent_dir(
+        self, test_paths: TestPathsType, tracker: InotifyTracker
+    ) -> None:
+        """Check inotify events when updating a parent directory."""
+        parent_dir = test_paths["parent_dir"]
+        with InotifyWatcher(parent_dir, **tracker.handlers_kwargs()) as w:
+            parent_dir.chmod(0o750)
+            w.wait(timeout=0.1)
+            assert tracker.event_count == 1
+            assert tracker.dir_updated[0] == parent_dir
+
+    def test_child_file(
+        self, test_paths: TestPathsType, tracker: InotifyTracker
+    ) -> None:
+        """Check inotify events when updating a child file."""
+        root_dir = test_paths["child_file.root"]
+        child_file = test_paths["child_file"]
+        with InotifyWatcher(root_dir, **tracker.handlers_kwargs()) as w:
+            child_file.chmod(0o640)
+            w.wait(timeout=0.1)
+            assert tracker.event_count == 1
+            assert tracker.file_updated[0] == child_file
+
+    def test_child_dir(
+        self, test_paths: TestPathsType, tracker: InotifyTracker
+    ) -> None:
+        """Check inotify events when updating a child directory."""
+        root_dir = test_paths["child_dir.root"]
+        child_dir = test_paths["child_dir"]
+        with InotifyWatcher(root_dir, **tracker.handlers_kwargs()) as w:
+            child_dir.chmod(0o750)
+            w.wait(timeout=0.1)
+            assert tracker.event_count == 1
+            assert tracker.dir_updated[0] == child_dir
