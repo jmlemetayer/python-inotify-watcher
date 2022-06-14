@@ -98,6 +98,20 @@ class TestCreated:
             assert tracker.event_count == 1
             assert tracker.dir_created[0] == child_dir
 
+    def test_tree(self, test_paths: TestPathsType, tracker: InotifyTracker) -> None:
+        """Check inotify events when creating a tree."""
+        root_dir = test_paths["root_dir"]
+        tree_file = root_dir / "dir1" / "dir2" / "dir3" / "tree_file"
+        with InotifyWatcher(root_dir, **tracker.handlers_kwargs()) as w:
+            tree_file.parent.mkdir(parents=True)
+            tree_file.touch()
+            w.wait(timeout=0.1)
+            assert tracker.event_count == 4
+            assert tracker.dir_created[0] == tree_file.parent.parent.parent
+            assert tracker.dir_created[1] == tree_file.parent.parent
+            assert tracker.dir_created[2] == tree_file.parent
+            assert tracker.file_created[0] == tree_file
+
 
 class TestUpdated:
     """Test cases related to the updated event."""
