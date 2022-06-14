@@ -44,7 +44,6 @@ class WatchedPath:
         descriptor: int,
         event_queue: Queue[Event | None],
         parent: WatchedPath | None = None,
-        initial: bool | None = None,
     ) -> None:
         self.__path = path
         self.__is_dir = path.is_dir()
@@ -56,10 +55,22 @@ class WatchedPath:
         if parent is not None:
             self.__path = path.relative_to(parent.path)
 
-        if initial:
-            self.send_event("watched")
-        else:
-            self.send_event("created")
+    @property
+    def path(self) -> PathType:
+        if self.__parent is not None:
+            return self.__parent.path / self.__path
+        return self.__path
+
+    def add_path(self, path: PathType, descriptor: int) -> WatchedPath:
+        watched_path = WatchedPath(path, descriptor, self.__event_queue, parent=self)
+        self.children.append(watched_path)
+        return watched_path
+
+    def remove(self) -> None:
+        for child in self.children:
+            child.remove()
+        if self.__parent is not None:
+            self.__parent.children.remove(self)
 
     def send_event(
         self, event_name: str, secondary_path: PathType | None = None
@@ -75,27 +86,6 @@ class WatchedPath:
             event_name = f"file_{event_name}"
 
         self.__event_queue.put(Event(event_name, paths))
-
-    @property
-    def path(self) -> PathType:
-        if self.__parent is not None:
-            return self.__parent.path / self.__path
-        return self.__path
-
-    def add_path(
-        self, path: PathType, descriptor: int, initial: bool | None = None
-    ) -> WatchedPath:
-        watched_path = WatchedPath(
-            path, descriptor, self.__event_queue, initial=initial, parent=self
-        )
-        self.children.append(watched_path)
-        return watched_path
-
-    def remove(self) -> None:
-        for child in self.children:
-            child.remove()
-        if self.__parent is not None:
-            self.__parent.children.remove(self)
 
 
 class WatchManager:
@@ -130,13 +120,16 @@ class WatchManager:
         parent = self.__get_path(path.parent)
 
         if parent is not None:
-            watched_path = parent.add_path(path, descriptor, initial=initial)
+            watched_path = parent.add_path(path, descriptor)
         else:
-            watched_path = WatchedPath(
-                path, descriptor, self.__event_queue, initial=initial
-            )
+            watched_path = WatchedPath(path, descriptor, self.__event_queue)
 
         self.__watched_paths.append(watched_path)
+
+        if initial is True:
+            watched_path.send_event("watched")
+        else:
+            watched_path.send_event("created")
 
     def __get_path(self, path_or_descriptor: PathType | int) -> WatchedPath | None:
         if isinstance(path_or_descriptor, PathType):
