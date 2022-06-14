@@ -191,3 +191,64 @@ class TestModified:
             w.wait(timeout=0.1)
             assert tracker.event_count == 1
             assert tracker.file_modified[0] == child_file
+
+
+class TestDeleted:
+    """Test cases related to the deleted event."""
+
+    test_paths_config = {
+        "parent_file": {"path": "parent_file"},
+        "parent_dir": {"path": "parent_dir", "is_dir": True},
+        "child_file.root": {"path": "child_file", "is_dir": True},
+        "child_file": {"path": "child_file/child_file"},
+        "child_dir.root": {"path": "child_dir", "is_dir": True},
+        "child_dir": {"path": "child_dir/child_dir", "is_dir": True},
+    }
+
+    def test_parent_file(
+        self, test_paths: TestPathsType, tracker: InotifyTracker
+    ) -> None:
+        """Check inotify events when deleting a parent file."""
+        parent_file = test_paths["parent_file"]
+        with InotifyWatcher(parent_file, **tracker.handlers_kwargs()) as w:
+            parent_file.unlink()
+            w.wait(timeout=0.1)
+            assert tracker.event_count == 2
+            assert tracker.file_updated[0] == parent_file
+            assert tracker.file_deleted[0] == parent_file
+
+    def test_parent_dir(
+        self, test_paths: TestPathsType, tracker: InotifyTracker
+    ) -> None:
+        """Check inotify events when deleting a parent directory."""
+        parent_dir = test_paths["parent_dir"]
+        with InotifyWatcher(parent_dir, **tracker.handlers_kwargs()) as w:
+            parent_dir.rmdir()
+            w.wait(timeout=0.1)
+            assert tracker.event_count == 1
+            assert tracker.dir_deleted[0] == parent_dir
+
+    def test_child_file(
+        self, test_paths: TestPathsType, tracker: InotifyTracker
+    ) -> None:
+        """Check inotify events when deleting a child file."""
+        root_dir = test_paths["child_file.root"]
+        child_file = test_paths["child_file"]
+        with InotifyWatcher(root_dir, **tracker.handlers_kwargs()) as w:
+            child_file.unlink()
+            w.wait(timeout=0.1)
+            assert tracker.event_count == 2
+            assert tracker.file_updated[0] == child_file
+            assert tracker.file_deleted[0] == child_file
+
+    def test_child_dir(
+        self, test_paths: TestPathsType, tracker: InotifyTracker
+    ) -> None:
+        """Check inotify events when deleting a child directory."""
+        root_dir = test_paths["child_dir.root"]
+        child_dir = test_paths["child_dir"]
+        with InotifyWatcher(root_dir, **tracker.handlers_kwargs()) as w:
+            child_dir.rmdir()
+            w.wait(timeout=0.1)
+            assert tracker.event_count == 1
+            assert tracker.dir_deleted[0] == child_dir
