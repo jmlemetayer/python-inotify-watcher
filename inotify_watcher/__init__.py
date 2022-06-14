@@ -183,7 +183,7 @@ class WatchManager:
 
         if event.mask & inotify_simple.flags.CREATE:
             assert event.name, "Invalid CREATE event without name"
-            self.__add_path(event_owner.path / event.name)
+            self.add_path(event_owner.path / event.name)
 
         elif event.mask & inotify_simple.flags.ATTRIB and not event.name:
             event_owner.send_event("updated")
