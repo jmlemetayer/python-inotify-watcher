@@ -51,7 +51,7 @@ class WatchedPath:
         self.descriptor = descriptor
         self.__parent = parent
         self.__event_queue = event_queue
-        self.__childs: list[WatchedPath] = list()
+        self.children: list[WatchedPath] = list()
 
         if parent is not None:
             self.__path = path.relative_to(parent.path)
@@ -88,8 +88,14 @@ class WatchedPath:
         watched_path = WatchedPath(
             path, descriptor, self.__event_queue, initial=initial, parent=self
         )
-        self.__childs.append(watched_path)
+        self.children.append(watched_path)
         return watched_path
+
+    def remove(self) -> None:
+        for child in self.children:
+            child.remove()
+        if self.__parent is not None:
+            self.__parent.children.remove(self)
 
 
 class WatchManager:
@@ -143,6 +149,10 @@ class WatchManager:
                     return watched_path
         return None
 
+    def __rm_path(self, watched_path: WatchedPath) -> None:
+        watched_path.remove()
+        self.__watched_paths.remove(watched_path)
+
     def close(self) -> None:
         if not self.__write.closed:
             self.__write.write(b"\x00")
@@ -168,6 +178,12 @@ class WatchManager:
     def __handle_event(self, event: inotify_simple.Event) -> None:
         event_owner = self.__get_path(event.wd)
 
+        if event.mask & inotify_simple.flags.IGNORED:
+            assert not event.name, "Invalid IGNORED event with name"
+            if event_owner is not None:
+                self.__rm_path(event_owner)
+            return
+
         assert (
             event_owner is not None
         ), "No watched path associated with event descriptor"
@@ -181,6 +197,12 @@ class WatchManager:
 
         elif event.mask & inotify_simple.flags.MODIFY and not event.name:
             event_owner.send_event("modified")
+
+        elif event.mask & inotify_simple.flags.DELETE_SELF:
+            assert not event.name, "Invalid DELETE_SELF event with name"
+            assert not event_owner.children, "Invalid DELETE_SELF event with children"
+            event_owner.send_event("deleted")
+            self.__rm_path(event_owner)
 
 
 class InotifyWatcher:
