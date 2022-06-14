@@ -98,22 +98,22 @@ class WatchManager:
 
         self.__watched_paths: list[WatchedPath] = list()
 
-    def add_paths(self, *paths: UserPathType, initial: bool | None = None) -> None:
+    def add_paths(self, *paths: UserPathType, **kwargs: bool | None) -> None:
         for path in paths:
-            self.add_path(path, initial=initial)
+            self.add_path(path, **kwargs)
 
-    def add_path(self, path: UserPathType, initial: bool | None = None) -> None:
+    def add_path(self, path: UserPathType, **kwargs: bool | None) -> None:
         path = PathType(path)
 
-        self.__add_path(path, initial=initial)
+        self.__add_path(path, **kwargs)
 
         if path.is_dir():
             for rootpath, dirnames, filenames in os.walk(path):
                 root = PathType(rootpath)
                 for dirname in dirnames:
-                    self.__add_path(root / dirname, initial=initial)
+                    self.__add_path(root / dirname, **kwargs)
                 for filename in filenames:
-                    self.__add_path(root / filename, initial=initial)
+                    self.__add_path(root / filename, **kwargs)
 
     def __add_path(self, path: PathType, initial: bool | None = None) -> None:
         descriptor = self.__inotify.add_watch(path, inotify_simple.masks.ALL_EVENTS)
