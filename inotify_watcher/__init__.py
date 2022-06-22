@@ -13,6 +13,7 @@ from queue import Queue
 from types import TracebackType
 from typing import Callable
 from typing import NamedTuple
+from typing import TypedDict
 from typing import Union
 
 import inotify_simple
@@ -30,6 +31,54 @@ HandlerNoneType = Callable[[], None]
 HandlerOneType = Callable[[PathType], None]
 HandlerTwoType = Callable[[PathType, PathType], None]
 HandlerType = Union[HandlerOneType, HandlerTwoType]
+
+
+class HandlerKwargsType(TypedDict, total=False):
+    """Types for the inotify watcher handlers as keyword arguments.
+
+    Attributes
+    ----------
+    file_watched: `HandlerOneType`, optional
+        Handler function called when a file is watched.
+    file_created: `HandlerOneType`, optional
+        Handler function called when a file is created.
+    file_updated: `HandlerOneType`, optional
+        Handler function called when a file is updated.
+    file_modified: `HandlerOneType`, optional
+        Handler function called when a file is modified.
+    file_moved: `HandlerTwoType`, optional
+        Handler function called when a file is moved.
+    file_deleted: `HandlerOneType`, optional
+        Handler function called when a file is deleted.
+    file_gone: `HandlerOneType`, optional
+        Handler function called when a file is gone.
+    dir_watched: `HandlerOneType`, optional
+        Handler function called when a directory is watched.
+    dir_created: `HandlerOneType`, optional
+        Handler function called when a directory is created.
+    dir_updated: `HandlerOneType`, optional
+        Handler function called when a directory is updated.
+    dir_moved: `HandlerTwoType`, optional
+        Handler function called when a directory is moved.
+    dir_deleted: `HandlerOneType`, optional
+        Handler function called when a directory is deleted.
+    dir_gone: `HandlerOneType`, optional
+        Handler function called when a directory is gone.
+    """
+
+    file_watched: HandlerOneType
+    file_created: HandlerOneType
+    file_updated: HandlerOneType
+    file_modified: HandlerOneType
+    file_moved: HandlerTwoType
+    file_deleted: HandlerOneType
+    file_gone: HandlerOneType
+    dir_watched: HandlerOneType
+    dir_created: HandlerOneType
+    dir_updated: HandlerOneType
+    dir_moved: HandlerTwoType
+    dir_deleted: HandlerOneType
+    dir_gone: HandlerOneType
 
 
 class Event(NamedTuple):
@@ -210,23 +259,13 @@ class InotifyWatcher:
 
         Parameters
         ----------
-        *paths: pathlib.Path or str
+        *paths: `UserPathType`
             Files and / or directories to watch.
-        **handlers: HandlerType
-            The supported handlers are:
-                - file_watched(path)
-                - file_created(path)
-                - file_updated(path)
-                - file_modified(path)
-                - file_moved(path, new_path)
-                - file_deleted(path)
-                - file_gone(path)
-                - dir_watched(path)
-                - dir_created(path)
-                - dir_updated(path)
-                - dir_moved(path, new_path)
-                - dir_deleted(path)
-                - dir_gone(path)
+        **handlers: `HandlerType`
+            Function handlers.
+
+            See :obj:`.HandlerKwargsType` for more details about the
+            supported handlers.
         """
         self.__threads: list[threading.Thread] = list()
         self.__closed = threading.Event()
