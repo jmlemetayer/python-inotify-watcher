@@ -1,4 +1,4 @@
-"""Low level inotify event tests used to design the `inotify_watcher` module."""
+"""Low level inotify event tests used to design the :obj:`inotify_watcher` module."""
 from __future__ import annotations
 
 import logging

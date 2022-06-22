@@ -1,4 +1,4 @@
-"""Test cases for the `inotify_watcher` module."""
+"""Test cases for the :obj:`inotify_watcher` module."""
 from __future__ import annotations
 
 import logging
