@@ -13,7 +13,7 @@ from typing import Any
 
 import inotify_simple
 
-from inotify_watcher import HandlerType
+from inotify_watcher import HandlerKwargsType
 from inotify_watcher import PathType
 
 logger = logging.getLogger(__name__)
@@ -237,9 +237,10 @@ class InotifyTracker:
         watched: bool | None = None,
         no_file: bool | None = None,
         no_dir: bool | None = None,
-    ) -> dict[str, HandlerType]:
+    ) -> HandlerKwargsType:
         """Return a dictionary with all the handlers pre-configured."""
-        handlers: dict[str, HandlerType] = dict()
+        handlers: HandlerKwargsType = HandlerKwargsType()
+
         if no_file is not True and watched is True:
             handlers["file_watched"] = self.file_watched_handle
         if no_file is not True:
