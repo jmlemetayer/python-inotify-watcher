@@ -1,6 +1,7 @@
 """An easy way to use inotify with python.
 
-This module implements only one `InotifyWatcher` class with a very simple usage.
+This module implements only one :obj:`InotifyWatcher` class with a very simple
+usage.
 """
 from __future__ import annotations
 
@@ -34,7 +35,7 @@ HandlerType = Union[HandlerOneType, HandlerTwoType]
 
 
 class HandlerKwargsType(TypedDict, total=False):
-    """Types for the inotify watcher handlers as keyword arguments.
+    """Type definition of the :obj:`InotifyWatcher` handlers as keyword arguments.
 
     Attributes
     ----------
@@ -255,7 +256,7 @@ class InotifyWatcher:
     """
 
     def __init__(self, *paths: UserPathType, **handlers: HandlerType) -> None:
-        """Construct the InotifyWatcher object.
+        """Construct the `InotifyWatcher` object.
 
         Parameters
         ----------

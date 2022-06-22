@@ -1,4 +1,4 @@
-"""Pytest fixtures for testing the `inotify_watcher` module."""
+"""Pytest fixtures for testing the :obj:`inotify_watcher` module."""
 from __future__ import annotations
 
 import logging
@@ -45,11 +45,11 @@ def test_paths(request: pytest.FixtureRequest, tmp_path: pathlib.Path) -> TestPa
     ----------
     request: pytest.FixtureRequest
         The pytest `request` fixture providing information on the executing
-        test function (:obj:`pytest.FixtureRequest`).
+        test function (:obj:`~pytest.FixtureRequest`).
     tmp_path: pathlib.Path
         The pytest `tmp_path` fixture providing a path object to a temporary
         directory which is unique to each test function
-        (:obj:`_pytest.tmpdir.tmp_path`).
+        (:obj:`~_pytest.tmpdir.tmp_path`).
 
     Returns
     -------
@@ -111,16 +111,16 @@ def inotify_test(test_paths: TestPathsType, tmp_path: pathlib.Path) -> InotifyTe
     ----------
     test_paths: dict[str, pathlib.Path]
         The test fixture that generates test files based on configuration
-        (:obj:`test_paths`).
+        (:obj:`.test_paths`).
     tmp_path: pathlib.Path
         The pytest `tmp_path` fixture providing a path object to a temporary
         directory which is unique to each test function
-        (:obj:`_pytest.tmpdir.tmp_path`).
+        (:obj:`~_pytest.tmpdir.tmp_path`).
 
     Returns
     -------
     inotify_simple: InotifyTest
-        A pre-configured `InotifyTest` object with the specified test paths.
+        A pre-configured :obj:`.InotifyTest` object with the specified test paths.
     """
     inotify = InotifyTest(tmp_path)
 

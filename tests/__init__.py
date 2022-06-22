@@ -1,4 +1,4 @@
-"""Test package for the `inotify_watcher` package.
+"""Test package for the :obj:`inotify_watcher` package.
 
 Please check the `Good Integration Practices`_.
 
@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 class InotifyEventTest:
-    """A wrapper of the `inotify_simple.Event`.
+    """A wrapper of the :obj:`inotify_simple.Event`.
 
     This wrapper is used to add some extra features to the
-    `inotify_simple.Event`.
+    :obj:`~inotify_simple.Event`.
 
     See Also
     --------
@@ -33,7 +33,7 @@ class InotifyEventTest:
     def __init__(
         self, event: inotify_simple.Event, wd_paths: dict[int | str, pathlib.Path]
     ) -> None:
-        """Create the `inotify_simple.Event` wrapper object.
+        """Create the :obj:`~inotify_simple.Event` wrapper object.
 
         Parameters
         ----------
@@ -42,8 +42,8 @@ class InotifyEventTest:
         wd_paths: dict[int, pathlib.Path]
             The watch descriptor vs path lookup table.
 
-            The key represent the watch descriptor (`int`) and the value the
-            path (`pathlib.Path`).
+            The key represent the watch descriptor (:obj:`int`) and the value the
+            path (:obj:`~pathlib.Path`).
 
             If available the watch descriptor ``"root"`` represents the root
             path to allow the pretty print to use a relative path.
@@ -113,9 +113,9 @@ class InotifyEventTest:
 
 
 class InotifyTest:
-    """A wrapper of the `inotify_simple.INotify`.
+    """A wrapper of the :obj:`inotify_simple.INotify`.
 
-    This wrapper is used to simplify some usage of the `inotify_simple.INotify`.
+    This wrapper is used to simplify some usage of the :obj:`~inotify_simple.INotify`.
 
     See Also
     --------
@@ -123,7 +123,7 @@ class InotifyTest:
     """
 
     def __init__(self, root: pathlib.Path | None = None) -> None:
-        """Create the `inotify_simple.INotify` wrapper object.
+        """Create the :obj:`~inotify_simple.INotify` wrapper object.
 
         Parameters
         ----------
@@ -149,7 +149,7 @@ class InotifyTest:
         self.__wd_paths[wd] = path
 
     def read_events(self) -> list[InotifyEventTest]:
-        """Read the `inotify_simple.Event` and wrap them.
+        """Read the :obj:`~inotify_simple.Event` and wrap them.
 
         Returns
         -------
@@ -238,7 +238,23 @@ class InotifyTracker:
         no_file: bool | None = None,
         no_dir: bool | None = None,
     ) -> HandlerKwargsType:
-        """Return a dictionary with all the handlers pre-configured."""
+        """Return a dictionary with all the handlers pre-configured.
+
+        Parameters
+        ----------
+        watched: bool, optional
+            Add the watched handlers.
+        no_file: bool, optional
+            Remove all the file handlers.
+        no_dir: bool, optional
+            Remove all the directory handlers.
+
+        Returns
+        -------
+        handlers_dictionary: HandlerKwargsType
+            A dictionary with all the handlers pre-configured and linked to the
+            tracker object.
+        """
         handlers: HandlerKwargsType = HandlerKwargsType()
 
         if no_file is not True and watched is True:

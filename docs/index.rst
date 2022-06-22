@@ -26,13 +26,13 @@ Using ``pip``::
 Usage
 -----
 
-The `inotify_watcher` module implements only one
-:obj:`inotify_watcher.InotifyWatcher` class with a very simple usage.
+The :obj:`inotify_watcher` module implements only one
+:obj:`~inotify_watcher.InotifyWatcher` class with a very simple usage.
 
 License
 -------
 
-The `inotify_watcher` module is released under the `MIT License`_
+The :obj:`inotify_watcher` module is released under the `MIT License`_
 
 .. _`MIT License`: https://github.com/jmlemetayer/python-inotify-watcher/blob/main/LICENSE.md
 
