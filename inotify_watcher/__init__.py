@@ -148,10 +148,6 @@ class WatchManager:
 
         self.__watched_paths: list[WatchedPath] = list()
 
-    def add_paths(self, *paths: UserPathType, **kwargs: bool | None) -> None:
-        for path in paths:
-            self.add_path(path, **kwargs)
-
     def add_path(self, path: UserPathType, **kwargs: bool | None) -> None:
         path = PathType(path)
 
@@ -165,7 +161,9 @@ class WatchManager:
                 for filename in filenames:
                     self.__add_path(root / filename, **kwargs)
 
-    def __add_path(self, path: PathType, initial: bool | None = None) -> None:
+    def __add_path(
+        self, path: PathType, generate_watched_events: bool | None = None
+    ) -> None:
         descriptor = self.__inotify.add_watch(path, inotify_simple.masks.ALL_EVENTS)
         parent = self.__get_path(path.parent)
 
@@ -176,10 +174,10 @@ class WatchManager:
 
         self.__watched_paths.append(watched_path)
 
-        if initial is True:
-            watched_path.send_event("watched")
-        else:
+        if generate_watched_events is None:
             watched_path.send_event("created")
+        elif generate_watched_events is True:
+            watched_path.send_event("watched")
 
     def __get_path(self, path_or_descriptor: PathType | int) -> WatchedPath | None:
         if isinstance(path_or_descriptor, PathType):
@@ -274,10 +272,20 @@ class InotifyWatcher:
         self.__handlers: dict[str, HandlerType] = dict()
         self.__handlers.update(handlers)
 
+        have_watched_handlers = False
+        if handlers.get("file_watched") is not None:
+            have_watched_handlers = True
+        if handlers.get("dir_watched") is not None:
+            have_watched_handlers = True
+
         self.__event_queue: Queue[Event | None] = Queue()
 
         self.__watch_manager = WatchManager(self.__event_queue)
-        self.__watch_manager.add_paths(*paths, initial=True)
+
+        for path in paths:
+            self.__watch_manager.add_path(
+                path, generate_watched_events=have_watched_handlers
+            )
 
         self.__start()
 
