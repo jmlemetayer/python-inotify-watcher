@@ -55,9 +55,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install inotify_simple
-        pip install pytest
-        pip install pytest-cov
+        pip install .[tests]
 
     - name: Run pytest
       run: pytest --cov inotify_watcher --cov-report xml tests
