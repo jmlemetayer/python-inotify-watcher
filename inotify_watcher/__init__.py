@@ -90,16 +90,16 @@ class Event(NamedTuple):
 class WatchedPath:
     def __init__(
         self,
+        manager: WatchManager,
         path: PathType,
         descriptor: int,
-        event_queue: Queue[Event | None],
         parent: WatchedPath | None = None,
     ) -> None:
+        self.__manager = manager
         self.__path = path
         self.__is_dir = path.is_dir()
         self.descriptor = descriptor
         self.__parent = parent
-        self.__event_queue = event_queue
         self.children: list[WatchedPath] = list()
 
         if parent is not None:
@@ -112,7 +112,7 @@ class WatchedPath:
         return self.__path
 
     def add_path(self, path: PathType, descriptor: int) -> WatchedPath:
-        watched_path = WatchedPath(path, descriptor, self.__event_queue, parent=self)
+        watched_path = WatchedPath(self.__manager, path, descriptor, parent=self)
         self.children.append(watched_path)
         return watched_path
 
@@ -135,7 +135,7 @@ class WatchedPath:
         else:
             event_name = f"file_{event_name}"
 
-        self.__event_queue.put(Event(event_name, paths))
+        self.__manager.send_event(Event(event_name, paths))
 
 
 class WatchManager:
@@ -147,6 +147,9 @@ class WatchManager:
         self.__write = os.fdopen(write_fd, "wb")
 
         self.__watched_paths: list[WatchedPath] = list()
+
+    def send_event(self, event: Event) -> None:
+        self.__event_queue.put(event)
 
     def add_path(self, path: UserPathType, **kwargs: bool | None) -> None:
         path = PathType(path)
@@ -170,7 +173,7 @@ class WatchManager:
         if parent is not None:
             watched_path = parent.add_path(path, descriptor)
         else:
-            watched_path = WatchedPath(path, descriptor, self.__event_queue)
+            watched_path = WatchedPath(self, path, descriptor)
 
         self.__watched_paths.append(watched_path)
 
