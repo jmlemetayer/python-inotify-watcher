@@ -13,3 +13,6 @@ __pycache__/
 # Coverage
 /.coverage
 /coverage.xml
+
+# Virtual environment
+/.venv/
