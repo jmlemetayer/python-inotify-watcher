@@ -1,4 +1,5 @@
 """Low level inotify event tests used to design the :obj:`inotify_watcher` module."""
+# pylint: disable=duplicate-code
 from __future__ import annotations
 
 import logging
@@ -118,8 +119,8 @@ class TestModified:
     ) -> None:
         """Check inotify events when modifying a parent file."""
         parent_file = test_paths["parent_file"]
-        with parent_file.open("a") as f:
-            f.write("Hello world")
+        with parent_file.open("a") as file:
+            file.write("Hello world")
         events = inotify_test.read_events()
         assert len(events) == 3
         assert events[0].match(path=parent_file, name=None, flags=["OPEN"])
@@ -132,8 +133,8 @@ class TestModified:
         """Check inotify events when modifying a child file."""
         root_dir = test_paths["child_file.root"]
         child_file = test_paths["child_file"]
-        with child_file.open("a") as f:
-            f.write("Hello world")
+        with child_file.open("a") as file:
+            file.write("Hello world")
         events = inotify_test.read_events()
         assert len(events) == 6
         assert events[0].match(path=root_dir, name=child_file.name, flags=["OPEN"])
