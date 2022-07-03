@@ -223,17 +223,18 @@ class WatchManager:  # noqa: E501 # pylint: disable=missing-class-docstring, mis
         event_owner = self.__get_path(event.wd)
 
         if event.mask & inotify_simple.flags.IGNORED:
-            assert not event.name, "Invalid IGNORED event with name"
+            if event.name:
+                raise RuntimeError("Invalid IGNORED event with name")
             if event_owner is not None:
                 self.__rm_path(event_owner)
             return
 
-        assert (
-            event_owner is not None
-        ), "No watched path associated with event descriptor"
+        if event_owner is None:
+            raise RuntimeError("No watched path associated with event descriptor")
 
         if event.mask & inotify_simple.flags.CREATE:
-            assert event.name, "Invalid CREATE event without name"
+            if not event.name:
+                raise RuntimeError("Invalid CREATE event without name")
             self.add_path(event_owner.path / event.name)
 
         elif event.mask & inotify_simple.flags.ATTRIB and not event.name:
@@ -243,8 +244,10 @@ class WatchManager:  # noqa: E501 # pylint: disable=missing-class-docstring, mis
             event_owner.send_event("modified")
 
         elif event.mask & inotify_simple.flags.DELETE_SELF:
-            assert not event.name, "Invalid DELETE_SELF event with name"
-            assert not event_owner.children, "Invalid DELETE_SELF event with children"
+            if event.name:
+                raise RuntimeError("Invalid DELETE_SELF event with name")
+            if event_owner.children:
+                raise RuntimeError("Invalid DELETE_SELF event with children")
             event_owner.send_event("deleted")
             self.__rm_path(event_owner)
 
