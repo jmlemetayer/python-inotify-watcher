@@ -217,6 +217,9 @@ class WatchManager:
             self.__inotify.close()
 
     def __handle_event(self, event: inotify_simple.Event) -> None:
+        event_flags = [f.name for f in inotify_simple.flags.from_mask(event.mask)]
+        logger.debug("%s %s", event, event_flags)
+
         event_owner = self.__get_path(event.wd)
 
         if event.mask & inotify_simple.flags.IGNORED:
