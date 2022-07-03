@@ -82,12 +82,12 @@ class HandlerKwargsType(TypedDict, total=False):
     dir_gone: HandlerOneType
 
 
-class Event(NamedTuple):
+class Event(NamedTuple):  # pylint: disable=missing-class-docstring
     name: str
     args: list[PathType]
 
 
-class WatchedPath:
+class WatchedPath:  # noqa: E501 # pylint: disable=missing-class-docstring, missing-function-docstring
     def __init__(
         self,
         path: PathType,
@@ -100,7 +100,7 @@ class WatchedPath:
         self.descriptor = descriptor
         self.__parent = parent
         self.__event_queue = event_queue
-        self.children: list[WatchedPath] = list()
+        self.children: list[WatchedPath] = []
 
         if parent is not None:
             self.__path = path.relative_to(parent.path)
@@ -138,7 +138,7 @@ class WatchedPath:
         self.__event_queue.put(Event(event_name, paths))
 
 
-class WatchManager:
+class WatchManager:  # noqa: E501 # pylint: disable=missing-class-docstring, missing-function-docstring
     def __init__(self, event_queue: Queue[Event | None]) -> None:
         self.__event_queue = event_queue
 
@@ -146,7 +146,7 @@ class WatchManager:
         self.__read_fd, write_fd = os.pipe()
         self.__write = os.fdopen(write_fd, "wb")
 
-        self.__watched_paths: list[WatchedPath] = list()
+        self.__watched_paths: list[WatchedPath] = []
 
     def add_path(self, path: UserPathType, **kwargs: bool | None) -> None:
         path = PathType(path)
@@ -217,7 +217,7 @@ class WatchManager:
             self.__inotify.close()
 
     def __handle_event(self, event: inotify_simple.Event) -> None:
-        event_flags = [f.name for f in inotify_simple.flags.from_mask(event.mask)]
+        event_flags = [flag.name for flag in inotify_simple.flags.from_mask(event.mask)]
         logger.debug("%s %s", event, event_flags)
 
         event_owner = self.__get_path(event.wd)
@@ -269,10 +269,10 @@ class InotifyWatcher:
             See :obj:`.HandlerKwargsType` for more details about the
             supported handlers.
         """
-        self.__threads: list[threading.Thread] = list()
+        self.__threads: list[threading.Thread] = []
         self.__closed = threading.Event()
 
-        self.__handlers: dict[str, HandlerType] = dict()
+        self.__handlers: dict[str, HandlerType] = {}
         self.__handlers.update(handlers)
 
         have_watched_handlers = False
@@ -370,7 +370,7 @@ class InotifyWatcher:
             try:
                 function()
 
-            except Exception as err:
+            except Exception as err:  # pylint: disable=broad-except
                 logger.error(err, exc_info=True)
 
     def __watcher(self) -> None:

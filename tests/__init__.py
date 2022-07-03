@@ -19,7 +19,7 @@ from inotify_watcher import PathType
 logger = logging.getLogger(__name__)
 
 
-class InotifyEventTest:
+class InotifyEventTest:  # pylint: disable=too-many-instance-attributes
     """A wrapper of the :obj:`inotify_simple.Event`.
 
     This wrapper is used to add some extra features to the
@@ -31,7 +31,7 @@ class InotifyEventTest:
     """
 
     def __init__(
-        self, event: inotify_simple.Event, wd_paths: dict[int | str, pathlib.Path]
+        self, event: inotify_simple.Event, wd_path_table: dict[int | str, pathlib.Path]
     ) -> None:
         """Create the :obj:`~inotify_simple.Event` wrapper object.
 
@@ -39,7 +39,7 @@ class InotifyEventTest:
         ----------
         event: inotify_simple.Event
             The original inotify event object.
-        wd_paths: dict[int, pathlib.Path]
+        wd_path_table: dict[int, pathlib.Path]
             The watch descriptor vs path lookup table.
 
             The key represent the watch descriptor (:obj:`int`) and the value the
@@ -49,13 +49,13 @@ class InotifyEventTest:
             path to allow the pretty print to use a relative path.
         """
         self.__event = event
-        self.__wd_paths = wd_paths
+        self.__wd_path_table = wd_path_table
 
-        self.wd = self.__event.wd
+        self.watch_descriptor = self.__event.wd
         self.mask = self.__event.mask
         self.cookie = self.__event.cookie
         self.name = self.__event.name or None
-        self.path = self.__wd_paths[self.wd]
+        self.path = self.__wd_path_table[self.watch_descriptor]
         self.flags = [f.name for f in inotify_simple.flags.from_mask(self.mask)]
 
     def __str__(self) -> str:
@@ -66,12 +66,12 @@ class InotifyEventTest:
         object_string: str
             The object representation string.
         """
-        root = self.__wd_paths.get("root")
+        root = self.__wd_path_table.get("root")
         path = self.path.relative_to(root) if root else self.path
 
         return (
             "InotifyEventTest("
-            f"wd={self.wd} "
+            f"wd={self.watch_descriptor} "
             f"path={path} "
             f"name={self.name} "
             f"mask={self.mask} "
@@ -132,10 +132,10 @@ class InotifyTest:
             events will use relative path to this root path.
         """
         self.__inotify = inotify_simple.INotify()
-        self.__wd_paths: dict[int | str, pathlib.Path] = dict()
+        self.__wd_path_table: dict[int | str, pathlib.Path] = {}
 
         if root is not None:
-            self.__wd_paths["root"] = root
+            self.__wd_path_table["root"] = root
 
     def add_watch(self, path: pathlib.Path) -> None:
         """Add a path to the watch list.
@@ -145,8 +145,10 @@ class InotifyTest:
         path: pathlib.Path
             The path to add to the watch list.
         """
-        wd = self.__inotify.add_watch(path, inotify_simple.masks.ALL_EVENTS)
-        self.__wd_paths[wd] = path
+        watch_descriptor = self.__inotify.add_watch(
+            path, inotify_simple.masks.ALL_EVENTS
+        )
+        self.__wd_path_table[watch_descriptor] = path
 
     def read_events(self) -> list[InotifyEventTest]:
         """Read the :obj:`~inotify_simple.Event` and wrap them.
@@ -157,28 +159,28 @@ class InotifyTest:
             The list of events that have been read.
         """
         return [
-            InotifyEventTest(e, self.__wd_paths)
+            InotifyEventTest(e, self.__wd_path_table)
             for e in self.__inotify.read(timeout=100, read_delay=100)
         ]
 
 
-class InotifyTracker:
+class InotifyTracker:  # pylint: disable=too-many-instance-attributes
     """A class to track the inotify events during a test."""
 
     def __init__(self) -> None:
-        self.file_watched: list[PathType] = list()
-        self.file_created: list[PathType] = list()
-        self.file_updated: list[PathType] = list()
-        self.file_modified: list[PathType] = list()
-        self.file_moved: list[tuple[PathType, PathType]] = list()
-        self.file_deleted: list[PathType] = list()
-        self.file_gone: list[PathType] = list()
-        self.dir_watched: list[PathType] = list()
-        self.dir_created: list[PathType] = list()
-        self.dir_updated: list[PathType] = list()
-        self.dir_moved: list[tuple[PathType, PathType]] = list()
-        self.dir_deleted: list[PathType] = list()
-        self.dir_gone: list[PathType] = list()
+        self.file_watched: list[PathType] = []
+        self.file_created: list[PathType] = []
+        self.file_updated: list[PathType] = []
+        self.file_modified: list[PathType] = []
+        self.file_moved: list[tuple[PathType, PathType]] = []
+        self.file_deleted: list[PathType] = []
+        self.file_gone: list[PathType] = []
+        self.dir_watched: list[PathType] = []
+        self.dir_created: list[PathType] = []
+        self.dir_updated: list[PathType] = []
+        self.dir_moved: list[tuple[PathType, PathType]] = []
+        self.dir_deleted: list[PathType] = []
+        self.dir_gone: list[PathType] = []
 
     def file_watched_handle(self, path: PathType) -> None:
         """Handle for the file_watched events."""
@@ -232,7 +234,7 @@ class InotifyTracker:
         """Handle for the dir_gone events."""
         self.dir_gone.append(path)
 
-    def handlers_kwargs(
+    def handlers_kwargs(  # pylint: disable=too-many-branches
         self,
         watched: bool | None = None,
         no_file: bool | None = None,

@@ -15,8 +15,10 @@ logger = logging.getLogger(__name__)
 TestPathsType = Dict[str, pathlib.Path]
 
 
-@pytest.fixture(scope="function")
-def test_paths(request: pytest.FixtureRequest, tmp_path: pathlib.Path) -> TestPathsType:
+@pytest.fixture(name="test_paths", scope="function")
+def fixture_test_paths(
+    request: pytest.FixtureRequest, tmp_path: pathlib.Path
+) -> TestPathsType:
     """Generate a test tree based on a configuration.
 
     The configuration is a dictionary with keys:
@@ -81,12 +83,12 @@ def test_paths(request: pytest.FixtureRequest, tmp_path: pathlib.Path) -> TestPa
     ...         print(test_paths["test_file"])
     /tmp/pytest-of-user/pytest-42/test_class0/class_dir/class_file
     """
-    test_paths: TestPathsType = dict()
+    test_paths: TestPathsType = {}
 
     if request.cls:
-        test_paths_config = request.cls.test_paths_config or dict()
+        test_paths_config = request.cls.test_paths_config or {}
     else:
-        test_paths_config = request.module.test_paths_config or dict()
+        test_paths_config = request.module.test_paths_config or {}
 
     for key, value in test_paths_config.items():
         path = pathlib.Path(tmp_path) / value["path"]
@@ -103,8 +105,10 @@ def test_paths(request: pytest.FixtureRequest, tmp_path: pathlib.Path) -> TestPa
     return test_paths
 
 
-@pytest.fixture(scope="function")
-def inotify_test(test_paths: TestPathsType, tmp_path: pathlib.Path) -> InotifyTest:
+@pytest.fixture(name="inotify_test", scope="function")
+def fixture_inotify_test(
+    test_paths: TestPathsType, tmp_path: pathlib.Path
+) -> InotifyTest:
     """Generate a pre-configured test instance of `inotify_simple.INotify`.
 
     Parameters
@@ -124,13 +128,13 @@ def inotify_test(test_paths: TestPathsType, tmp_path: pathlib.Path) -> InotifyTe
     """
     inotify = InotifyTest(tmp_path)
 
-    for key, path in test_paths.items():
+    for path in test_paths.values():
         inotify.add_watch(path)
 
     return inotify
 
 
-@pytest.fixture(scope="function")
-def tracker() -> InotifyTracker:
+@pytest.fixture(name="tracker", scope="function")
+def fixture_tracker() -> InotifyTracker:
     """Return a new inotify tracker object."""
     return InotifyTracker()

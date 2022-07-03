@@ -51,6 +51,13 @@ repos:
     rev: 4.0.1
     hooks:
       - id: flake8
+  - repo: "https://github.com/PyCQA/pylint"
+    rev: v2.14.4
+    hooks:
+      - id: pylint
+        additional_dependencies:
+          - inotify_simple
+          - pytest
   - repo: "https://github.com/PyCQA/pydocstyle"
     rev: 6.1.1
     hooks:
