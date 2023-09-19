@@ -16,7 +16,7 @@ repos:
         args:
           - "--min-py3-version=3.8"
   - repo: "https://github.com/asottile/reorder_python_imports"
-    rev: v3.10.0
+    rev: v3.11.0
     hooks:
       - id: reorder-python-imports
         args:
@@ -24,7 +24,7 @@ repos:
           - "from __future__ import annotations"
           - "--py38-plus"
   - repo: "https://github.com/asottile/pyupgrade"
-    rev: v3.10.1
+    rev: v3.11.0
     hooks:
       - id: pyupgrade
         args:
